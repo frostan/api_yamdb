@@ -65,10 +65,10 @@ class TitlesGetSerializers(serializers.ModelSerializer):
 class ReviewSerializers(serializers.ModelSerializer):
     """Cериализатор ."""
 
-    title = serializers.SlugRelatedField(
-        slug_field='slug',
-        queryset=Categories.objects.all()
-    )
+    # title = serializers.SlugRelatedField(
+    #     slug_field='slug',
+    #     queryset=Categories.objects.all()
+    # )
 
     class Meta:
         model = Review

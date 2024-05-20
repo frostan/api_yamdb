@@ -1,5 +1,5 @@
 from django.db import models
-
+# from user.models import CustomUser
 
 class BaseCategoriesGenresModel(models.Model):
     name = models.CharField(max_length=256)
@@ -64,12 +64,13 @@ class Review(models.Model):
         related_name='reviews',
         verbose_name='ID_произведения'
     )
-    # user = models.ForeignKey(
-    #     User,
+    # author = models.ForeignKey(
+    #     CustomUser,
     #     on_delete=models.CASCADE,
     #     related_name='reviews',
     #     verbose_name='Автор_отзыва'
     # )
+    author = models.IntegerField(verbose_name='ID_автора')
 
     class Meta:
         """Класс Мета."""
@@ -94,6 +95,13 @@ class Comment(models.Model):
         related_name='comments',
         verbose_name='Комментарий'
     )
+    # author = models.ForeignKey(
+    #     CustomUser,
+    #     on_delete=models.CASCADE,
+    #     related_name='reviews',
+    #     verbose_name='Автор_комментария'
+    # )
+    author = models.IntegerField(verbose_name='ID_автора')
 
     class Meta:
         """Класс Мета."""
