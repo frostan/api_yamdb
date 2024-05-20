@@ -50,3 +50,57 @@ class Titles(models.Model):
 
     def __str__(self) -> str:
         return f'{self.category} - {self.genre} - {self.name} - {self.year}'
+
+
+class Review(models.Model):
+    text = models.CharField(
+        max_length=256,
+        verbose_name='Текст'
+    )
+    score = models.IntegerField(verbose_name='Оценка')
+    title = models.ForeignKey(
+        Titles,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='ID_произведения'
+    )
+    # user = models.ForeignKey(
+    #     User,
+    #     on_delete=models.CASCADE,
+    #     related_name='reviews',
+    #     verbose_name='Автор_отзыва'
+    # )
+
+    class Meta:
+        """Класс Мета."""
+
+        verbose_name = 'Оценка'
+        verbose_name_plural = 'Оценки'
+
+    def __str__(self):
+        """Строковое представление поля для админ-зоны."""
+        return self.text
+
+
+class Comment(models.Model):
+    text = models.CharField(
+        max_length=256,
+        verbose_name='Текст'
+    )
+    review = models.ForeignKey(
+        Review,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='comments',
+        verbose_name='Комментарий'
+    )
+
+    class Meta:
+        """Класс Мета."""
+
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self):
+        """Строковое представление поля для админ-зоны."""
+        return self.text
