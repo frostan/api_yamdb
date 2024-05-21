@@ -7,10 +7,11 @@ class UserAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'email',
+        'bio',
         'confirmation_code',
-        'user_role',
+        'role',
     )
-    list_editable = ('user_role',)
+    list_editable = ('role',)
     empty_value_display = 'пусто'
 
 

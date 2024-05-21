@@ -9,10 +9,11 @@ class CustomUser(AbstractUser):
         ('moderator', 'Модератор'),
         ('admin', 'Админ')
     ]
+    bio = models.TextField('Биография', blank=True)
     email = models.EmailField(
         'Электронная почта',
         unique=True,
-        max_length=256
+        max_length=254
     )
     confirmation_code = models.CharField(
         'Код подтверждения',
@@ -20,7 +21,7 @@ class CustomUser(AbstractUser):
         blank=True,
         max_length=256
     )
-    user_role = models.CharField(
+    role = models.CharField(
         'Вид пользователя',
         default='user',
         choices=USER_ROLES,
