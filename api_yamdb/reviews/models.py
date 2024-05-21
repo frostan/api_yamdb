@@ -1,5 +1,5 @@
 from django.db import models
-# from user.models import CustomUser
+from users.models import CustomUser
 
 class BaseCategoriesGenresModel(models.Model):
     name = models.CharField(max_length=256)
@@ -52,7 +52,19 @@ class Titles(models.Model):
         return f'{self.category} - {self.genre} - {self.name} - {self.year}'
 
 
+
+
+
+
+
+
+
+
+
+
 class Review(models.Model):
+    """Модель Review."""
+
     text = models.CharField(
         max_length=256,
         verbose_name='Текст'
@@ -64,13 +76,16 @@ class Review(models.Model):
         related_name='reviews',
         verbose_name='ID_произведения'
     )
-    # author = models.ForeignKey(
-    #     CustomUser,
-    #     on_delete=models.CASCADE,
-    #     related_name='reviews',
-    #     verbose_name='Автор_отзыва'
-    # )
-    author = models.IntegerField(verbose_name='ID_автора')
+    pub_date = models.DateTimeField(
+        'Дата публикации отзыва',
+        auto_now_add=True
+    )
+    author = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Автор_отзыва'
+    )
 
     class Meta:
         """Класс Мета."""
@@ -86,22 +101,25 @@ class Review(models.Model):
 class Comment(models.Model):
     text = models.CharField(
         max_length=256,
-        verbose_name='Текст'
+        verbose_name='Текст комментария'
+    )
+    pub_date = models.DateTimeField(
+        'Дата публикации комментария',
+        auto_now_add=True
     )
     review = models.ForeignKey(
         Review,
         on_delete=models.SET_NULL,
         null=True,
         related_name='comments',
-        verbose_name='Комментарий'
+        verbose_name='Отзыв'
     )
-    # author = models.ForeignKey(
-    #     CustomUser,
-    #     on_delete=models.CASCADE,
-    #     related_name='reviews',
-    #     verbose_name='Автор_комментария'
-    # )
-    author = models.IntegerField(verbose_name='ID_автора')
+    author = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='comment',
+        verbose_name='Автор_комментария'
+    )
 
     class Meta:
         """Класс Мета."""
