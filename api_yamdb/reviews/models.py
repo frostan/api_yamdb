@@ -1,5 +1,9 @@
 from django.db import models
 from users.models import CustomUser
+from django.contrib.auth import get_user_model
+
+
+User = get_user_model()
 
 class BaseCategoriesGenresModel(models.Model):
     name = models.CharField(max_length=256)

@@ -1,5 +1,5 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, viewsets, status
+from rest_framework import filters, mixins, viewsets, status, permissions
 from rest_framework.response import Response
 from .permissions import AdminPermission
 
@@ -50,12 +50,11 @@ class GenresViewSet(CreateDeleteListViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializers
-    permission_classes = (AdminPermission,)
+    permission_classes = (AdminPermission, )
 
     def get_queryset(self):
         """Переопределение queryset."""
         title_id = self.kwargs.get('title_id')
-        print("@@@@@@@@@@@@@@@@@@@", Review.objects.filter(title=title_id))
         return Review.objects.filter(title=title_id)
 
     def perform_create(self, serializer):

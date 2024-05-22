@@ -71,10 +71,11 @@ class ReviewSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ('id', 'text', 'score', 'title', 'author', 'pub_date')
+        fields = ('id', 'text', 'score', 'author', 'pub_date')
 
     def validate_score(self, value):
-        if value in range(MIN_SCORE, MAX_SCORE + 1):
+        print('value=', value)
+        if value not in range(MIN_SCORE, MAX_SCORE + 1):
             raise serializers.ValidationError(
                 f'Оценка выходит за диапазон, {MIN_SCORE}..{MAX_SCORE}')
         return value
