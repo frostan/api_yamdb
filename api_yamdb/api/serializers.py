@@ -1,8 +1,13 @@
 import datetime as dt
 from rest_framework import serializers
 
-from reviews.models import Categories, Genres, Titles
+from reviews.models import Categories, Genres, Titles, Review, Comment
 from users.models import CustomUser
+
+# Максимальная оценка.
+MAX_SCORE = 10
+# Минимальная оценка.
+MIN_SCORE = 1
 
 
 class CategoriesSerializers(serializers.ModelSerializer):
@@ -33,7 +38,7 @@ class TitlesPostSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = Titles
-        fields = ('name', 'year', 'description', 'genre', 'category')
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
 
     def validate_year(self, value):
         year = dt.date.today().year
@@ -57,6 +62,35 @@ class TitlesGetSerializers(serializers.ModelSerializer):
             'genre',
             'category'
         )
+
+
+class ReviewSerializers(serializers.ModelSerializer):
+    """Cериализатор ."""
+
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
+
+    class Meta:
+        model = Review
+        fields = ('id', 'text', 'score', 'title', 'author', 'pub_date')
+
+    def validate_score(self, value):
+        if value in range(MIN_SCORE, MAX_SCORE + 1):
+            raise serializers.ValidationError(
+                f'Оценка выходит за диапазон, {MIN_SCORE}..{MAX_SCORE}')
+        return value
+
+
+class CommentSerializers(serializers.ModelSerializer):
+    """Cериализатор ."""
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
+
+    class Meta:
+        model = Review
+        fields = ('id', 'text', 'author', 'pub_date')
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
