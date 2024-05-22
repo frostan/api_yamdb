@@ -7,6 +7,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.core.exceptions import ObjectDoesNotExist
 from .permissions import AdminPermission
 
 from api.serializers import (
@@ -120,7 +121,7 @@ def token_view(request):
     if not (serializer.is_valid()):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     username = request.data.get('username')
-    confirmation_code = request.data.get('confirmation_cade')
+    confirmation_code = request.data.get('confirmation_code')
     user = get_object_or_404(CustomUser, username=username)
     if not default_token_generator.check_token(user, confirmation_code):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -135,9 +136,10 @@ def signup_view(request):
     username = request.data.get('username')
     email = request.data.get('email')
     if not (serializer.is_valid()):
-        CustomUser.objects.all(username=username, email=email)
-    else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            CustomUser.objects.get(username=username, email=email)
+        except ObjectDoesNotExist:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     user, created = CustomUser.objects.get_or_create(
         username=username, email=email)
     confirmation_code = default_token_generator.make_token(user)
