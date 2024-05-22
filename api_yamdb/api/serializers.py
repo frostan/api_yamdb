@@ -2,7 +2,7 @@ import datetime as dt
 from rest_framework import serializers
 
 from reviews.models import Categories, Genres, Titles
-#from users.models import CustomUser
+from users.models import CustomUser
 
 
 class CategoriesSerializers(serializers.ModelSerializer):
@@ -57,3 +57,29 @@ class TitlesGetSerializers(serializers.ModelSerializer):
             'genre',
             'category'
         )
+
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = (
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'bio',
+            'role'
+        )
+
+
+class SignUpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email')
+
+    def validate_username(self, username):
+        if username == 'me':
+            raise serializers.ValidationError(
+                ' me нельзя использовать в качестве username'
+            )
+        return username
