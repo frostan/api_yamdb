@@ -1,6 +1,7 @@
 from django.db import models
 from users.models import CustomUser
 
+
 class BaseCategoriesGenresModel(models.Model):
     name = models.CharField(max_length=256)
     slug = models.SlugField(
@@ -50,16 +51,6 @@ class Titles(models.Model):
 
     def __str__(self) -> str:
         return f'{self.category} - {self.genre} - {self.name} - {self.year}'
-
-
-
-
-
-
-
-
-
-
 
 
 class Review(models.Model):

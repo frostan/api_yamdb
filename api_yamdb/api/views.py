@@ -1,8 +1,12 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework_simplejwt.views import TokenViewBase
+from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import filters, mixins, viewsets, status
 from rest_framework.response import Response
-
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from .permissions import AdminPermission
 
 from api.serializers import (
@@ -11,9 +15,10 @@ from api.serializers import (
     TitlesGetSerializers,
     TitlesPostSerializers,
     CustomUserSerializer,
-    SignUpSerializer,
     ReviewSerializers,
-    CommentSerializers
+    CommentSerializers,
+    TokenSerializer,
+    SignUpSerializer,
 )
 from users.models import CustomUser
 from reviews.models import Categories, Genres, Titles, Review, Comment
@@ -85,14 +90,62 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     search_fields = ('username',)
 
+    @action(
+        detail=False,
+        methods=['GET', 'PATCH'],
+        permission_classes=[IsAuthenticated],
+    )
+    def me(self, request):
+        if request.method == 'PATCH':
+            serializer = self.get_serializer(
+                request.user, data=request.data, partial=True)
+            if not (serializer.is_valid()):
+                return Response(
+                    serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if serializer.validated_data.get('role'):
+                if request.user.role != 'admin' or not (
+                    request.user.is_authenticated
+                ):
+                    serializer.validated_data['role'] = request.user.role
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-class SignUpViewSet(
-    mixins.CreateModelMixin,
-    viewsets.GenericViewSet
-):
-    queryset = CustomUser.objects.all()
-    serializer_class = SignUpSerializer
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def token_view(request):
+    serializer = TokenSerializer(data=request.data)
+    if not (serializer.is_valid()):
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    username = request.data.get('username')
+    confirmation_code = request.data.get('confirmation_cade')
+    user = get_object_or_404(CustomUser, username=username)
+    if not default_token_generator.check_token(user, confirmation_code):
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    token = AccessToken.for_user(user)
+    return Response(data={'token': token}, status=status.HTTP_200_OK)
 
 
-class TokenViewSet(TokenViewBase):
-    pass
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def signup_view(request):
+    serializer = SignUpSerializer(data=request.data)
+    username = request.data.get('username')
+    email = request.data.get('email')
+    if not (serializer.is_valid()):
+        CustomUser.objects.all(username=username, email=email)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    user, created = CustomUser.objects.get_or_create(
+        username=username, email=email)
+    confirmation_code = default_token_generator.make_token(user)
+    send_mail(
+        'Код для регистрации',
+        f'Ваш код {confirmation_code}',
+        'uu@yamd.com',
+        [email],
+        fail_silently=False
+    )
+    return Response(serializer.data, status=status.HTTP_200_OK)
