@@ -22,8 +22,9 @@ from api.serializers import (
     TokenSerializer,
     SignUpSerializer,
 )
+
 from users.models import CustomUser
-from reviews.models import Categories, Genres, Titles, Review, Comment
+from reviews.models import Category, Genre, Title, Review, Comment
 
 
 class CreateDeleteListViewSet(
@@ -39,7 +40,7 @@ class CreateDeleteListViewSet(
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
-    queryset = Titles.objects.all()
+    queryset = Title.objects.all()
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
 
@@ -50,12 +51,12 @@ class TitlesViewSet(viewsets.ModelViewSet):
 
 
 class CategoriesViewSet(CreateDeleteListViewSet):
-    queryset = Categories.objects.all()
+    queryset = Category.objects.all()
     serializer_class = CategoriesSerializers
 
 
 class GenresViewSet(CreateDeleteListViewSet):
-    queryset = Genres.objects.all()
+    queryset = Genre.objects.all()
     serializer_class = GenresSerializers
 
 

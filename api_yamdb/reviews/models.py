@@ -1,8 +1,10 @@
 from django.db import models
+
 from users.models import CustomUser
 
 
-class BaseCategoriesGenresModel(models.Model):
+
+class BaseCategoryGenreModel(models.Model):
     name = models.CharField(max_length=256)
     slug = models.SlugField(
         max_length=50,
@@ -16,15 +18,15 @@ class BaseCategoriesGenresModel(models.Model):
         return f'{self.name} - {self.slug}'
 
 
-class Categories(BaseCategoriesGenresModel):
+class Category(BaseCategoryGenreModel):
     pass
 
 
-class Genres(BaseCategoriesGenresModel):
+class Genre(BaseCategoryGenreModel):
     pass
 
 
-class Titles(models.Model):
+class Title(models.Model):
     name = models.CharField(
         max_length=256,
         verbose_name='Название'
@@ -36,14 +38,15 @@ class Titles(models.Model):
         verbose_name='Описание'
     )
     genre = models.ManyToManyField(
-        Genres,
-        verbose_name='Slug жанра'
+        Genre,
+        through='TitleGenre',
+        verbose_name='Жанр'
     )
     category = models.ForeignKey(
-        Categories,
+        Category,
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name='Slug категории'
+        verbose_name='Категория'
     )
 
     class Meta:
@@ -51,6 +54,28 @@ class Titles(models.Model):
 
     def __str__(self) -> str:
         return f'{self.category} - {self.genre} - {self.name} - {self.year}'
+
+
+class TitleGenre(models.Model):
+    title = models.ForeignKey(
+        Title,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='titles',
+        verbose_name='Произведение'
+    )
+    genre = models.ForeignKey(
+        Genre,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='genres',
+        verbose_name='Жанр'
+    )
+
+    def str(self):
+        return f'{self.title} - {self.genre}'
 
 
 class Review(models.Model):
