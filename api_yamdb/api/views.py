@@ -7,8 +7,9 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.core.exceptions import ObjectDoesNotExist
 from .permissions import AdminPermission
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.views import APIView
 
 from api.serializers import (
     CategoriesSerializers,
@@ -88,8 +89,12 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = (AdminPermission,)
+    pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     search_fields = ('username',)
+    lookup_field = 'username'
+    http_method_names = ('get', 'post', 'patch', 'delete')
+
 
     @action(
         detail=False,
@@ -100,11 +105,11 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         if request.method == 'PATCH':
             serializer = self.get_serializer(
                 request.user, data=request.data, partial=True)
-            if not (serializer.is_valid()):
+            if not serializer.is_valid():
                 return Response(
                     serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             if serializer.validated_data.get('role'):
-                if request.user.role != 'admin' or not (
+                if request.user.role != 'admin' or (
                     request.user.is_authenticated
                 ):
                     serializer.validated_data['role'] = request.user.role
@@ -114,40 +119,42 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def token_view(request):
-    serializer = TokenSerializer(data=request.data)
-    if not (serializer.is_valid()):
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    username = request.data.get('username')
-    confirmation_code = request.data.get('confirmation_code')
-    user = get_object_or_404(CustomUser, username=username)
-    if not default_token_generator.check_token(user, confirmation_code):
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    token = AccessToken.for_user(user)
-    return Response(data={'token': token}, status=status.HTTP_200_OK)
+class TokenView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        serializer = TokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        username = serializer.validated_data['username']
+        confirmation_code = serializer.validated_data['confirmation_code']
+        user = get_object_or_404(CustomUser, username=username)
+
+        if not default_token_generator.check_token(user, confirmation_code):
+            return Response(
+                {"confirmation_code": ["Код подтверждения неверный"]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        access_token = AccessToken.for_user(user)
+        return Response({'token': str(access_token)})
 
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def signup_view(request):
-    serializer = SignUpSerializer(data=request.data)
-    username = request.data.get('username')
-    email = request.data.get('email')
-    if not (serializer.is_valid()):
-        try:
-            CustomUser.objects.get(username=username, email=email)
-        except ObjectDoesNotExist:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    user, created = CustomUser.objects.get_or_create(
-        username=username, email=email)
-    confirmation_code = default_token_generator.make_token(user)
-    send_mail(
-        'Код для регистрации',
-        f'Ваш код {confirmation_code}',
-        'uu@yamd.com',
-        [email],
-        fail_silently=False
-    )
-    return Response(serializer.data, status=status.HTTP_200_OK)
+class SignUpView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        serializer = SignUpSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        token = default_token_generator.make_token(user)
+        self.send_confirmation_code(token, user.email)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def send_confirmation_code(token, email):
+        send_mail(
+            subject='Код подтверждения',
+            message=f'Ваш код подтверждения: {token}',
+            from_email='yy@mail.com',
+            recipient_list=[email],
+        )

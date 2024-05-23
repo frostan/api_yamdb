@@ -6,12 +6,13 @@ class AdminPermission(BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and (
             request.user.is_staff
+            or request.user.is_admin
             or request.user.is_superuser
         )
 
 
 class ModeratorPermission(BasePermission):
-    """Доступ модеру, остальным чтение."""
+    """Доступ модератору."""
     def has_permission(self, request, view):
         return request.method in SAFE_METHODS or request.user.is_authenticated
 
@@ -19,8 +20,8 @@ class ModeratorPermission(BasePermission):
         return request.method in SAFE_METHODS or request.user.is_staff
 
 
-class IsAuthor(BasePermission):
-    """Доступ автору остальным чтение."""
+class Author(BasePermission):
+    """Доступ автору."""
 
     def has_permission(self, request, view):
         return request.method in SAFE_METHODS or request.user.is_authenticated
