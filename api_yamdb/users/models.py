@@ -34,3 +34,8 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    @property
+    def is_admin(self):
+        """Атрибут класса."""
+        return self.role == 'admin' or self.is_superuser
