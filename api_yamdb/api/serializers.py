@@ -1,4 +1,5 @@
 import datetime as dt
+from django.core.exceptions import BadRequest
 from rest_framework import serializers
 
 from reviews.models import Category, Genre, Title, Review, Comment
