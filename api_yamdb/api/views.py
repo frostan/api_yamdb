@@ -133,7 +133,7 @@ class TokenView(APIView):
 
         if not default_token_generator.check_token(user, confirmation_code):
             return Response(
-                {"confirmation_code": ["Код подтверждения неверный"]},
+                serializer.errors,
                 status=status.HTTP_400_BAD_REQUEST,
             )
         access_token = AccessToken.for_user(user)
