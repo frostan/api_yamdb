@@ -52,7 +52,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     # queryset = Review.objects.all()
     serializer_class = ReviewSerializers
     permission_classes = (MyPermission, )
-    http_method_names = ['get', 'post', 'patch'] 
+    http_method_names = ['get', 'post', 'patch', 'delete'] 
 
     def get_queryset(self):
         """Переопределение queryset."""

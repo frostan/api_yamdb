@@ -34,4 +34,10 @@ class MyPermission(BasePermission):
         )
 
     def has_object_permission(self, request, view, obj):
-        return request.method in SAFE_METHODS
+        if request.method in SAFE_METHODS:
+            return request.method in SAFE_METHODS
+        print('author=====', obj.author, '=====', request.user.role)
+        return obj.author == request.user or (
+            request.user.role == 'moderator' or
+            request.user.role == 'admin'
+            )
