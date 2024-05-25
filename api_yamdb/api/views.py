@@ -2,7 +2,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import filters, mixins, viewsets, status
 from rest_framework.response import Response
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.tokens import default_token_generator
@@ -91,7 +91,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     permission_classes = (AdminPermission,)
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
-    search_fields = ('username',)
+    search_fields = ('username')
     lookup_field = 'username'
     http_method_names = ('get', 'post', 'patch', 'delete')
 
@@ -120,7 +120,6 @@ class CustomUserViewSet(viewsets.ModelViewSet):
 
 
 class TokenView(APIView):
-    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
@@ -132,15 +131,13 @@ class TokenView(APIView):
 
         if not default_token_generator.check_token(user, confirmation_code):
             return Response(
-                {"confirmation_code": ["Код подтверждения неверный"]},
-                status=status.HTTP_400_BAD_REQUEST,
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
         access_token = AccessToken.for_user(user)
         return Response({'token': str(access_token)})
 
 
 class SignUpView(APIView):
-    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
