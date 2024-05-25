@@ -10,6 +10,7 @@ from django.core.mail import send_mail
 from api.permissions import AdminPermission, ReadOnlyAnonymousUser
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.views import APIView
+from django.db.models import Avg
 
 from api.serializers import (
     CategoriesSerializers,
@@ -40,7 +41,8 @@ class CreateDeleteListViewSet(
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(rating=Avg('reviews__score'))
+    http_method_names = ('get', 'post', 'patch', 'delete')
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
     pagination_class = LimitOffsetPagination
@@ -69,14 +71,15 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Переопределение queryset."""
-        title_id = self.kwargs.get('title_id')
-        print("@@@@@@@@@@@@@@@@@@@", Review.objects.filter(title=title_id))
-        return Review.objects.filter(title=title_id)
+        title_id = self.kwargs.get("title_id")
+        new_queryset = Review.objects.filter(title=title_id)
+        return new_queryset
 
     def perform_create(self, serializer):
         """Переопределение метода create."""
         title_id = self.kwargs.get('title_id')
-        title = Title.objects.get(id=title_id)
+#        title = Title.objects.get(id=title_id)
+        title = get_object_or_404(Title, id=title_id)
         if serializer.is_valid():
             serializer.save(title=title, author=self.request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
