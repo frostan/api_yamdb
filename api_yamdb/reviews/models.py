@@ -23,11 +23,11 @@ class Categories(BaseCategoriesGenresModel):
     pass
 
 
-class Genres(BaseCategoriesGenresModel):
+class Genre(BaseCategoriesGenresModel):
     pass
 
 
-class Titles(models.Model):
+class Title(models.Model):
     name = models.CharField(
         max_length=256,
         verbose_name='Название'
@@ -39,7 +39,7 @@ class Titles(models.Model):
         verbose_name='Описание'
     )
     genre = models.ManyToManyField(
-        Genres,
+        Genre,
         verbose_name='Slug жанра'
     )
     category = models.ForeignKey(
@@ -56,16 +56,6 @@ class Titles(models.Model):
         return f'{self.category} - {self.genre} - {self.name} - {self.year}'
 
 
-
-
-
-
-
-
-
-
-
-
 class Review(models.Model):
     """Модель Review."""
 
@@ -75,7 +65,7 @@ class Review(models.Model):
     )
     score = models.IntegerField(verbose_name='Оценка')
     title = models.ForeignKey(
-        Titles,
+        Title,
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='ID_произведения'
@@ -93,7 +83,12 @@ class Review(models.Model):
 
     class Meta:
         """Класс Мета."""
-
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'title'],
+                name='unique_author_title'
+            )
+        ]
         verbose_name = 'Оценка'
         verbose_name_plural = 'Оценки'
 
