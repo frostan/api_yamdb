@@ -23,7 +23,8 @@ from api.serializers import (
     SignUpSerializer,
 )
 from users.models import CustomUser
-from reviews.models import Categories, Genres, Titles, Review, Comment
+from reviews.models import Category, Genre, Title, Review, Comment
+
 
 
 class CreateDeleteListViewSet(
@@ -39,7 +40,7 @@ class CreateDeleteListViewSet(
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
-    queryset = Titles.objects.all()
+    queryset = Title.objects.all()
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
 
@@ -50,12 +51,12 @@ class TitlesViewSet(viewsets.ModelViewSet):
 
 
 class CategoriesViewSet(CreateDeleteListViewSet):
-    queryset = Categories.objects.all()
+    queryset = Category.objects.all()
     serializer_class = CategoriesSerializers
 
 
 class GenresViewSet(CreateDeleteListViewSet):
-    queryset = Genres.objects.all()
+    queryset = Genre.objects.all()
     serializer_class = GenresSerializers
 
 
@@ -91,7 +92,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     permission_classes = (AdminPermission,)
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
-    search_fields = ('username')
+    search_fields = ('username',)
     lookup_field = 'username'
     http_method_names = ('get', 'post', 'patch', 'delete')
 
@@ -120,6 +121,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
 
 
 class TokenView(APIView):
+    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
@@ -138,6 +140,7 @@ class TokenView(APIView):
 
 
 class SignUpView(APIView):
+    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
