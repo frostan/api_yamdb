@@ -7,7 +7,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from .permissions import AdminPermission
+from api.permissions import AdminPermission, ReadOnlyAnonymousUser
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.views import APIView
 
@@ -29,7 +29,6 @@ from reviews.models import Category, Genre, Title, Review, Comment
 
 class CreateDeleteListViewSet(
     mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet
@@ -37,12 +36,15 @@ class CreateDeleteListViewSet(
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
+    permission_classes = [AdminPermission | ReadOnlyAnonymousUser]
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
+    pagination_class = LimitOffsetPagination
+    permission_classes = [AdminPermission | ReadOnlyAnonymousUser]
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -74,7 +76,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Переопределение метода create."""
         title_id = self.kwargs.get('title_id')
-        title = Titles.objects.get(id=title_id)
+        title = Title.objects.get(id=title_id)
         if serializer.is_valid():
             serializer.save(title=title, author=self.request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)

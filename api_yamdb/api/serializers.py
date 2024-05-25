@@ -53,7 +53,6 @@ class TitlesGetSerializers(serializers.ModelSerializer):
     """Cериализатор для GET запроса"""
     category = CategoriesSerializers(read_only=True)
     genre = GenresSerializers(many=True, read_only=True)
-    # rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Title
@@ -61,7 +60,7 @@ class TitlesGetSerializers(serializers.ModelSerializer):
             'id',
             'name',
             'year',
-            # 'rating',
+            'reviews',
             'description',
             'genre',
             'category'
