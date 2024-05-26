@@ -4,11 +4,7 @@ from rest_framework import serializers
 
 from reviews.models import Category, Genre, Title, Review, Comment
 from users.models import CustomUser
-
-# Максимальная оценка.
-MAX_SCORE = 10
-# Минимальная оценка.
-MIN_SCORE = 1
+from api.const import LEN_TITLE, MAX_SCORE, MIN_SCORE
 
 
 class CategoriesSerializers(serializers.ModelSerializer):
@@ -47,6 +43,13 @@ class TitlesPostSerializers(serializers.ModelSerializer):
         year = dt.date.today().year
         if not year >= value:
             raise serializers.ValidationError('Проверьте год выпуска!')
+        return value
+
+    def validate_name(self, value):
+        if LEN_TITLE < len(value):
+            raise serializers.ValidationError(
+                'Имя произведения большое 256 символов'
+            )
         return value
 
 

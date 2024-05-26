@@ -23,7 +23,7 @@ from api.serializers import (
     TokenSerializer,
     SignUpSerializer,
 )
-
+from api.filter import TitleFilters
 from users.models import CustomUser
 from reviews.models import Category, Genre, Title, Review, Comment
 
@@ -44,7 +44,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.annotate(rating=Avg('reviews__score'))
     http_method_names = ('get', 'post', 'patch', 'delete')
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category', 'genre', 'name', 'year')
+    filterset_class = TitleFilters
     pagination_class = LimitOffsetPagination
     permission_classes = [AdminPermission | ReadOnlyAnonymousUser]
 
@@ -100,7 +100,6 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     search_fields = ('username',)
     lookup_field = 'username'
     http_method_names = ('get', 'post', 'patch', 'delete')
-
 
     @action(
         detail=False,
