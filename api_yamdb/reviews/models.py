@@ -63,7 +63,7 @@ class Review(models.Model):
         max_length=256,
         verbose_name='Текст'
     )
-    score = models.IntegerField(verbose_name='Оценка')
+    score = models.IntegerField(default=1, verbose_name='Оценка')
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,

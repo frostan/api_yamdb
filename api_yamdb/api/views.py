@@ -1,9 +1,9 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from django.core.exceptions import BadRequest
+from django.shortcuts import get_object_or_404
 from rest_framework import filters, mixins, viewsets, status, permissions
 from rest_framework.response import Response
 from .permissions import AdminPermission, MyPermission
-from django.shortcuts import get_object_or_404
-
 from api.serializers import (
     CategoriesSerializers,
     GenresSerializers,
@@ -27,7 +27,7 @@ class CreateDeleteListViewSet(
     lookup_field = 'slug'
 
 
-class TitlesViewSet(viewsets.ModelViewSet):
+class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
@@ -38,48 +38,45 @@ class TitlesViewSet(viewsets.ModelViewSet):
         return TitlesPostSerializers
 
 
-class CategoriesViewSet(CreateDeleteListViewSet):
+class CategorieViewSet(CreateDeleteListViewSet):
     queryset = Categories.objects.all()
     serializer_class = CategoriesSerializers
 
 
-class GenresViewSet(CreateDeleteListViewSet):
+class GenreViewSet(CreateDeleteListViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenresSerializers
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    # queryset = Review.objects.all()
+    """Класс ViewSet модели Review."""
+    queryset = Review.objects.all()
     serializer_class = ReviewSerializers
+    lookup_url_kwarg = 'review_id'
     permission_classes = (MyPermission, )
-    http_method_names = ['get', 'post', 'patch', 'delete'] 
-
-    def get_queryset(self):
-        """Переопределение queryset."""
-        title_id = self.kwargs.get("title_id")
-        new_queryset = Review.objects.filter(title=title_id)
-        return new_queryset
-    
-    # def perform_create(self, serializer):
-    #     serializer.save(author=self.request.user)     
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def perform_create(self, serializer):
         """Переопределение метода create."""
         title_id = self.kwargs.get('title_id')
-#        title = Title.objects.get(id=title_id)
         title = get_object_or_404(Title, id=title_id)
         if serializer.is_valid():
             serializer.save(title=title, author=self.request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # def perform_update(self, serializer):
-    #     """Переопределение метода update."""
-    #     title_id
-    #     title_id = self.kwargs.get('title_id')
-    #     title = Titles.objects.get(id=title_id)
-
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """Класс ViewSet модели Comment."""
     queryset = Comment.objects.all()
     serializer_class = CommentSerializers
+    lookup_url_kwarg = 'comment_id'
+    permission_classes = (MyPermission, )
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def perform_create(self, serializer):
+        """Переопределение метода create."""
+        if serializer.is_valid():
+            serializer.save(author=self.request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
