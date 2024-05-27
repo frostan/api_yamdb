@@ -1,13 +1,10 @@
 import datetime as dt
+from django.core.exceptions import BadRequest
 from rest_framework import serializers
 
 from reviews.models import Category, Genre, Title, Review, Comment
 from users.models import CustomUser
-
-# Максимальная оценка.
-MAX_SCORE = 10
-# Минимальная оценка.
-MIN_SCORE = 1
+from api.const import LEN_TITLE, MAX_SCORE, MIN_SCORE
 
 
 class CategoriesSerializers(serializers.ModelSerializer):
@@ -46,12 +43,19 @@ class TitlesPostSerializers(serializers.ModelSerializer):
             raise serializers.ValidationError('Проверьте год выпуска!')
         return value
 
+    def validate_name(self, value):
+        if LEN_TITLE < len(value):
+            raise serializers.ValidationError(
+                'Имя произведения большое 256 символов'
+            )
+        return value
+
 
 class TitlesGetSerializers(serializers.ModelSerializer):
     """Cериализатор для GET запроса"""
     category = CategoriesSerializers(read_only=True)
     genre = GenresSerializers(many=True, read_only=True)
-    # rating = serializers.IntegerField(read_only=True)
+    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Title
@@ -59,7 +63,7 @@ class TitlesGetSerializers(serializers.ModelSerializer):
             'id',
             'name',
             'year',
-            # 'rating',
+            'rating',
             'description',
             'genre',
             'category'
