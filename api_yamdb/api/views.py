@@ -7,9 +7,10 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from .permissions import AdminPermission
+from api.permissions import AdminPermission, ReadOnlyAnonymousUser
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.views import APIView
+from django.db.models import Avg
 
 from api.serializers import (
     CategoriesSerializers,
@@ -22,6 +23,7 @@ from api.serializers import (
     TokenSerializer,
     SignUpSerializer,
 )
+from api.filter import TitleFilters
 from users.models import CustomUser
 from reviews.models import Category, Genre, Title, Review, Comment
 
@@ -29,7 +31,6 @@ from reviews.models import Category, Genre, Title, Review, Comment
 
 class CreateDeleteListViewSet(
     mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet
@@ -37,12 +38,16 @@ class CreateDeleteListViewSet(
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
+    permission_classes = [AdminPermission | ReadOnlyAnonymousUser]
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(rating=Avg('reviews__score'))
+    http_method_names = ('get', 'post', 'patch', 'delete')
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category', 'genre', 'name', 'year')
+    filterset_class = TitleFilters
+    pagination_class = LimitOffsetPagination
+    permission_classes = [AdminPermission | ReadOnlyAnonymousUser]
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -67,14 +72,15 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Переопределение queryset."""
-        title_id = self.kwargs.get('title_id')
-        print("@@@@@@@@@@@@@@@@@@@", Review.objects.filter(title=title_id))
-        return Review.objects.filter(title=title_id)
+        title_id = self.kwargs.get("title_id")
+        new_queryset = Review.objects.filter(title=title_id)
+        return new_queryset
 
     def perform_create(self, serializer):
         """Переопределение метода create."""
         title_id = self.kwargs.get('title_id')
-        title = Titles.objects.get(id=title_id)
+#        title = Title.objects.get(id=title_id)
+        title = get_object_or_404(Title, id=title_id)
         if serializer.is_valid():
             serializer.save(title=title, author=self.request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -95,7 +101,6 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     search_fields = ('username',)
     lookup_field = 'username'
     http_method_names = ('get', 'post', 'patch', 'delete')
-
 
     @action(
         detail=False,

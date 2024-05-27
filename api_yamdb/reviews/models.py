@@ -3,7 +3,6 @@ from django.db import models
 from users.models import CustomUser
 
 
-
 class BaseCategoryGenreModel(models.Model):
     name = models.CharField(max_length=256)
     slug = models.SlugField(
@@ -87,7 +86,7 @@ class Review(models.Model):
     )
     score = models.IntegerField(verbose_name='Оценка')
     title = models.ForeignKey(
-        Titles,
+        Title,
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='ID_произведения'
