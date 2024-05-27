@@ -2,7 +2,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import filters, mixins, viewsets, status
 from rest_framework.response import Response
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.tokens import default_token_generator
@@ -26,6 +26,7 @@ from api.serializers import (
 from api.filter import TitleFilters
 from users.models import CustomUser
 from reviews.models import Category, Genre, Title, Review, Comment
+
 
 
 class CreateDeleteListViewSet(
@@ -137,8 +138,7 @@ class TokenView(APIView):
 
         if not default_token_generator.check_token(user, confirmation_code):
             return Response(
-                {"confirmation_code": ["Код подтверждения неверный"]},
-                status=status.HTTP_400_BAD_REQUEST,
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
         access_token = AccessToken.for_user(user)
         return Response({'token': str(access_token)})
