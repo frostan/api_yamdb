@@ -1,11 +1,10 @@
 from django.db import models
-from users.models import CustomUser
 from django.contrib.auth import get_user_model
-
 
 User = get_user_model()
 
-class BaseCategoriesGenresModel(models.Model):
+
+class BaseCategoryGenreModel(models.Model):
     name = models.CharField(max_length=256)
     slug = models.SlugField(
         max_length=50,
@@ -19,11 +18,11 @@ class BaseCategoriesGenresModel(models.Model):
         return f'{self.name} - {self.slug}'
 
 
-class Categories(BaseCategoriesGenresModel):
+class Category(BaseCategoryGenreModel):
     pass
 
 
-class Genre(BaseCategoriesGenresModel):
+class Genre(BaseCategoryGenreModel):
     pass
 
 
@@ -40,13 +39,14 @@ class Title(models.Model):
     )
     genre = models.ManyToManyField(
         Genre,
-        verbose_name='Slug жанра'
+        through='TitleGenre',
+        verbose_name='Жанр'
     )
     category = models.ForeignKey(
-        Categories,
+        Category,
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name='Slug категории'
+        verbose_name='Категория'
     )
 
     class Meta:
@@ -54,6 +54,28 @@ class Title(models.Model):
 
     def __str__(self) -> str:
         return f'{self.category} - {self.genre} - {self.name} - {self.year}'
+
+
+class TitleGenre(models.Model):
+    title = models.ForeignKey(
+        Title,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='titles',
+        verbose_name='Произведение'
+    )
+    genre = models.ForeignKey(
+        Genre,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='genres',
+        verbose_name='Жанр'
+    )
+
+    def str(self):
+        return f'{self.title} - {self.genre}'
 
 
 class Review(models.Model):
@@ -75,7 +97,7 @@ class Review(models.Model):
         auto_now_add=True
     )
     author = models.ForeignKey(
-        CustomUser,
+        User,
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='Автор_отзыва'
@@ -114,7 +136,7 @@ class Comment(models.Model):
         verbose_name='Отзыв'
     )
     author = models.ForeignKey(
-        CustomUser,
+        User,
         on_delete=models.CASCADE,
         related_name='comment',
         verbose_name='Автор_комментария'

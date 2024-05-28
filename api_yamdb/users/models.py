@@ -28,6 +28,11 @@ class CustomUser(AbstractUser):
         max_length=20
     )
 
+    @property
+    def is_admin(self):
+        """Атрибут класса."""
+        return self.role == 'admin' or self.is_superuser
+
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'

@@ -2,18 +2,16 @@ import datetime as dt
 from django.core.exceptions import BadRequest
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from reviews.models import Categories, Genre, Title, Review, Comment
-
-# Максимальная оценка.
-MAX_SCORE = 10
-# Минимальная оценка.
-MIN_SCORE = 1
+from reviews.models import Category, Genre, Title, Review, Comment
+from reviews.models import Category, Genre, Title, Review, Comment
+from users.models import CustomUser
+from api.const import LEN_TITLE, MAX_SCORE, MIN_SCORE
 
 
 class CategoriesSerializers(serializers.ModelSerializer):
 
     class Meta:
-        model = Categories
+        model = Category
         exclude = ('id',)
 
 
@@ -28,7 +26,7 @@ class TitlesPostSerializers(serializers.ModelSerializer):
     """Cериализатор для POST запроса"""
     category = serializers.SlugRelatedField(
         slug_field='slug',
-        queryset=Categories.objects.all()
+        queryset=Category.objects.all()
     )
     genre = serializers.SlugRelatedField(
         slug_field='slug',
@@ -46,12 +44,19 @@ class TitlesPostSerializers(serializers.ModelSerializer):
             raise serializers.ValidationError('Проверьте год выпуска!')
         return value
 
+    def validate_name(self, value):
+        if LEN_TITLE < len(value):
+            raise serializers.ValidationError(
+                'Имя произведения большое 256 символов'
+            )
+        return value
+
 
 class TitlesGetSerializers(serializers.ModelSerializer):
     """Cериализатор для GET запроса"""
     category = CategoriesSerializers(read_only=True)
     genre = GenresSerializers(many=True, read_only=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Title
@@ -59,23 +64,11 @@ class TitlesGetSerializers(serializers.ModelSerializer):
             'id',
             'name',
             'year',
+            'rating',
             'description',
             'genre',
-            'category',
-            'rating'
+            'category'
         )
-
-    def get_rating(self, obj):
-        """Функция для расчета поля rating."""
-        scores = list(Review.objects.values(
-            'score').filter(title__id=obj.id))
-        ratings = 0
-        for score in scores:
-            ratings += score.get('score')
-        if len(scores) == 0:
-            return ratings
-        rating = ratings / len(scores)
-        return rating
 
 
 class ReviewSerializers(serializers.ModelSerializer):
@@ -89,7 +82,7 @@ class ReviewSerializers(serializers.ModelSerializer):
         """Класс Meta Cериализатора модели Review."""
         model = Review
         fields = ('id', 'text', 'score', 'author', 'pub_date', 'title')
-        read_only_fields = ('title', 'author', 'review')
+        read_only_fields = ('title', 'author')
         extra_kwargs = {'author': {'required': True}}
 
     def create(self, validated_data):
@@ -133,3 +126,34 @@ class CommentSerializers(serializers.ModelSerializer):
             raise BadRequest("HTTP_400_BAD_REQUEST")
         comment = Comment.objects.create(**validated_data)
         return comment
+
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = (
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'bio',
+            'role'
+        )
+
+
+class SignUpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email')
+
+    def validate_username(self, username):
+        if username == 'me':
+            raise serializers.ValidationError(
+                ' me нельзя использовать в качестве username'
+            )
+        return username
+
+
+class TokenSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150)
+    confirmation_code = serializers.CharField(max_length=250)
