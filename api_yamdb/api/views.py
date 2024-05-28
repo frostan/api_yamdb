@@ -4,12 +4,13 @@ from rest_framework import filters, mixins, viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from api.permissions import AdminPermission, ReadOnlyAnonymousUser
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.views import APIView
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Avg
 
 from api.serializers import (
@@ -26,7 +27,6 @@ from api.serializers import (
 from api.filter import TitleFilters
 from users.models import CustomUser
 from reviews.models import Category, Genre, Title, Review, Comment
-
 
 
 class CreateDeleteListViewSet(
@@ -79,7 +79,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Переопределение метода create."""
         title_id = self.kwargs.get('title_id')
-#        title = Title.objects.get(id=title_id)
         title = get_object_or_404(Title, id=title_id)
         if serializer.is_valid():
             serializer.save(title=title, author=self.request.user)
@@ -93,11 +92,12 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
+    """Вьюсет пользователя."""
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = (AdminPermission,)
     pagination_class = LimitOffsetPagination
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     lookup_field = 'username'
     http_method_names = ('get', 'post', 'patch', 'delete')
@@ -126,40 +126,48 @@ class CustomUserViewSet(viewsets.ModelViewSet):
 
 
 class TokenView(APIView):
-    permission_classes = (AllowAny,)
+    """Вью токена."""
 
     def post(self, request):
+        """POST-запрос на получение токена."""
         serializer = TokenSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        username = serializer.validated_data['username']
-        confirmation_code = serializer.validated_data['confirmation_code']
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+        username = request.data.get('username')
+        confirmation_code = request.data.get('confirmation_code')
         user = get_object_or_404(CustomUser, username=username)
-
         if not default_token_generator.check_token(user, confirmation_code):
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
-        access_token = AccessToken.for_user(user)
-        return Response({'token': str(access_token)})
+        token = AccessToken.for_user(user)
+        return Response({'token': token}, status=status.HTTP_200_OK)
 
 
 class SignUpView(APIView):
-    permission_classes = (AllowAny,)
+    """Вью регистрации."""
 
     def post(self, request):
+        """POST-запрос на получения email с кодом подтверждения."""
         serializer = SignUpSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        token = default_token_generator.make_token(user)
-        self.send_confirmation_code(token, user.email)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @staticmethod
-    def send_confirmation_code(token, email):
+        username = request.data.get('username')
+        email = request.data.get('email')
+        if not serializer.is_valid():
+            try:
+                CustomUser.objects.get(username=username, email=email)
+            except ObjectDoesNotExist:
+                return Response(
+                    serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                )
+        user, created = CustomUser.objects.get_or_create(
+            username=username, email=email)
+        confirmation_code = default_token_generator.make_token(user)
         send_mail(
-            subject='Код подтверждения',
-            message=f'Ваш код подтверждения: {token}',
-            from_email='yy@mail.com',
-            recipient_list=[email],
+            'Код подтверждения',
+            f'Ваш код : {confirmation_code}',
+            'uu@yamnd.com',
+            [email],
         )
+        return Response(serializer.data, status=status.HTTP_200_OK)
