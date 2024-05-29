@@ -1,6 +1,7 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 
-from users.models import CustomUser
+User = get_user_model()
 
 
 class BaseCategoryGenreModel(models.Model):
@@ -84,7 +85,7 @@ class Review(models.Model):
         max_length=256,
         verbose_name='Текст'
     )
-    score = models.IntegerField(verbose_name='Оценка')
+    score = models.IntegerField(default=1, verbose_name='Оценка')
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -96,7 +97,7 @@ class Review(models.Model):
         auto_now_add=True
     )
     author = models.ForeignKey(
-        CustomUser,
+        User,
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='Автор_отзыва'
@@ -104,7 +105,12 @@ class Review(models.Model):
 
     class Meta:
         """Класс Мета."""
-
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'title'],
+                name='unique_author_title'
+            )
+        ]
         verbose_name = 'Оценка'
         verbose_name_plural = 'Оценки'
 
@@ -130,7 +136,7 @@ class Comment(models.Model):
         verbose_name='Отзыв'
     )
     author = models.ForeignKey(
-        CustomUser,
+        User,
         on_delete=models.CASCADE,
         related_name='comment',
         verbose_name='Автор_комментария'

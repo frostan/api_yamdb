@@ -7,7 +7,11 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from api.permissions import AdminPermission, ReadOnlyAnonymousUser
+from api.permissions import (
+    AdminPermission,
+    ReadOnlyAnonymousUser,
+    CustomPermission
+)
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.views import APIView
 from django.core.exceptions import ObjectDoesNotExist
@@ -66,15 +70,12 @@ class GenresViewSet(CreateDeleteListViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    """Класс ViewSet модели Review."""
     queryset = Review.objects.all()
     serializer_class = ReviewSerializers
-    permission_classes = (AdminPermission,)
-
-    def get_queryset(self):
-        """Переопределение queryset."""
-        title_id = self.kwargs.get("title_id")
-        new_queryset = Review.objects.filter(title=title_id)
-        return new_queryset
+    lookup_url_kwarg = 'review_id'
+    permission_classes = (CustomPermission, )
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def perform_create(self, serializer):
         """Переопределение метода create."""
@@ -87,8 +88,19 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """Класс ViewSet модели Comment."""
     queryset = Comment.objects.all()
     serializer_class = CommentSerializers
+    lookup_url_kwarg = 'comment_id'
+    permission_classes = (CustomPermission, )
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def perform_create(self, serializer):
+        """Переопределение метода create."""
+        if serializer.is_valid():
+            serializer.save(author=self.request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
