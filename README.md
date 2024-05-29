@@ -87,8 +87,8 @@ python3 manage.py runserver
 ![Static Badge](https://img.shields.io/badge/PATCH-FF8C00)
 ![Static Badge](https://img.shields.io/badge/DEL-FF0000)
 
-### Получение всех записей:
 
+#### Получение всех записей:
 ![Static Badge](https://img.shields.io/badge/GET-1fa7)```http://127.0.0.1:8000/api/v1/titles/```
 
 ##### Ответ:```200```
@@ -119,6 +119,7 @@ python3 manage.py runserver
 }
 ```
 
+#### Добавить новый отзыв:
 ![Static Badge](https://img.shields.io/badge/POST-00BFFF)```http://127.0.0.1:8000/api/v1/titles/{title_id}/reviews/```
 
 ##### Ответ:```201```
@@ -132,6 +133,7 @@ python3 manage.py runserver
 }
 ```
 
+#### Частичное обновление комментария к отзыву:
 ![Static Badge](https://img.shields.io/badge/PATCH-FF8C00)```http://127.0.0.1:8000/api/v1/titles/{title_id}/reviews/{review_id}/comments/{comment_id}/```
 
 ##### Ответ:```200```
@@ -144,7 +146,7 @@ python3 manage.py runserver
 }
 ```
 
-
+#### Удаление пользователя по username:
 ![Static Badge](https://img.shields.io/badge/DEL-FF0000)```http://127.0.0.1:8000/api/v1/users/{username}/```
 
 ##### Ответ:```404```
