@@ -41,7 +41,7 @@ class ReadOnlyAnonymousUser(BasePermission):
         return request.method in permissions.SAFE_METHODS
 
 
-class CustomPermission(ReadOnlyAnonymousUser):
+class CustomPermission(BasePermission):
     """Класс кастомных пермишенов."""
     def has_permission(self, request, view):
         return (

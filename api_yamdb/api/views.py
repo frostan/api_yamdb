@@ -94,7 +94,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     lookup_url_kwarg = 'comment_id'
     permission_classes = (CustomPermission, )
     http_method_names = ['get', 'post', 'patch', 'delete']
-    print('@@@@@@@@@@@', queryset)
 
     def perform_create(self, serializer):
         """Переопределение метода create."""
