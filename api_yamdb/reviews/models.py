@@ -1,12 +1,21 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 
-from users.models import CustomUser
+from api.const import (
+    TEXT_MAX_LENGTH,
+    NAME_MAX_LENGTH,
+    SLUG_MAX_LENGTH
+)
+
+User = get_user_model()
 
 
 class BaseCategoryGenreModel(models.Model):
-    name = models.CharField(max_length=256)
+    """Базовая модель Категорий и Жанров."""
+
+    name = models.CharField(max_length=NAME_MAX_LENGTH)
     slug = models.SlugField(
-        max_length=50,
+        max_length=SLUG_MAX_LENGTH,
         unique=True,
     )
 
@@ -18,16 +27,20 @@ class BaseCategoryGenreModel(models.Model):
 
 
 class Category(BaseCategoryGenreModel):
+    """Модель категории."""
     pass
 
 
 class Genre(BaseCategoryGenreModel):
+    """Модель жанров."""
     pass
 
 
 class Title(models.Model):
+    """Модель произведений."""
+
     name = models.CharField(
-        max_length=256,
+        max_length=NAME_MAX_LENGTH,
         verbose_name='Название'
     )
     year = models.IntegerField(verbose_name='Год выпуска')
@@ -56,6 +69,8 @@ class Title(models.Model):
 
 
 class TitleGenre(models.Model):
+    """Модель жанров произведений."""
+
     title = models.ForeignKey(
         Title,
         blank=True,
@@ -81,10 +96,10 @@ class Review(models.Model):
     """Модель Review."""
 
     text = models.CharField(
-        max_length=256,
+        max_length=TEXT_MAX_LENGTH,
         verbose_name='Текст'
     )
-    score = models.IntegerField(verbose_name='Оценка')
+    score = models.IntegerField(default=1, verbose_name='Оценка')
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -96,7 +111,7 @@ class Review(models.Model):
         auto_now_add=True
     )
     author = models.ForeignKey(
-        CustomUser,
+        User,
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='Автор_отзыва'
@@ -107,6 +122,12 @@ class Review(models.Model):
 
         verbose_name = 'Оценка'
         verbose_name_plural = 'Оценки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'title'],
+                name='unique_author_title'
+            )
+        ]
 
     def __str__(self):
         """Строковое представление поля для админ-зоны."""
@@ -114,8 +135,10 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
+    """Модель комментариев."""
+
     text = models.CharField(
-        max_length=256,
+        max_length=TEXT_MAX_LENGTH,
         verbose_name='Текст комментария'
     )
     pub_date = models.DateTimeField(
@@ -130,7 +153,7 @@ class Comment(models.Model):
         verbose_name='Отзыв'
     )
     author = models.ForeignKey(
-        CustomUser,
+        User,
         on_delete=models.CASCADE,
         related_name='comment',
         verbose_name='Автор_комментария'

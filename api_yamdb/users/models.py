@@ -1,9 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+from api.const import (
+    ROLE_MAX_LEGTH,
+    CODE_MAX_LEGTH,
+    EMAIL_MAX_LEGTH
+)
+
 
 class CustomUser(AbstractUser):
     """Кастомная модель юзера."""
+
     USER_ROLES = [
         ('user', 'Пользователь'),
         ('moderator', 'Модератор'),
@@ -13,19 +20,19 @@ class CustomUser(AbstractUser):
     email = models.EmailField(
         'Электронная почта',
         unique=True,
-        max_length=254
+        max_length=EMAIL_MAX_LEGTH
     )
     confirmation_code = models.CharField(
         'Код подтверждения',
         null=True,
         blank=True,
-        max_length=256
+        max_length=CODE_MAX_LEGTH
     )
     role = models.CharField(
         'Вид пользователя',
         default='user',
         choices=USER_ROLES,
-        max_length=20
+        max_length=ROLE_MAX_LEGTH
     )
 
     @property
