@@ -1,8 +1,10 @@
 """Загрузчик данных в SQLite."""
-import csv
 import logging
 
 from api_yamdb.reviews.models import Category
+
+import csv
+
 
 _log_format = '%(asctime)s, [%(levelname)s], %(message)s, %(funcName)s'
 
