@@ -28,12 +28,12 @@ def load_to_sql(dataReader):
     line = 0
     for line in dataReader:
         if line != 0:
-            category = Category()
-            category.id = row[0]
-            category.review = row[1]
-            category.text = row[2]
-            category.author = row[3]
-            category.pub_date = row[4]
+            category = Category.objects.create()
+            category.id = line[0]
+            category.review = line[1]
+            category.text = line[2]
+            category.author = line[3]
+            category.pub_date = line[4]
             category.save()
         else:
             line += 1
