@@ -1,6 +1,7 @@
 """Загрузчик данных в SQLite."""
 import logging
-from api_yamdb.reviews.models import *
+
+from api_yamdb.reviews.models import Category
 
 import csv
 
