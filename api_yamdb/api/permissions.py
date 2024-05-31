@@ -19,15 +19,14 @@ class ReadOnlyAnonymousUser(BasePermission):
         return request.method in SAFE_METHODS
 
 
-class CustomPermission(BasePermission):
+class CommentReviewPermission(BasePermission):
     """Класс кастомных пермишенов."""
 
     def has_permission(self, request, view):
         return (
             request.method in SAFE_METHODS
             or (request.user.is_authenticated
-                or request.user.is_staff
-                or request.user.is_superuser)
+                or request.user.is_staff)
         )
 
     def has_object_permission(self, request, view, obj):

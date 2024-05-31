@@ -15,7 +15,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from api.filter import TitleFilters
 from api.permissions import (
     AdminPermission,
-    CustomPermission,
+    CommentReviewPermission,
     ReadOnlyAnonymousUser
 )
 from api.serializers import (
@@ -83,7 +83,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializers
     lookup_url_kwarg = 'review_id'
-    permission_classes = (CustomPermission, )
+    permission_classes = (CommentReviewPermission, )
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def perform_create(self, serializer):
@@ -102,7 +102,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializers
     lookup_url_kwarg = 'comment_id'
-    permission_classes = (CustomPermission, )
+    permission_classes = (CommentReviewPermission, )
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def perform_create(self, serializer):
