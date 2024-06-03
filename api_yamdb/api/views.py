@@ -1,6 +1,5 @@
 from django.contrib.auth.tokens import default_token_generator
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.mail import send_mail
+from django.db import IntegrityError
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
@@ -19,18 +18,18 @@ from api.permissions import (
     ReadOnlyAnonymousUser
 )
 from api.serializers import (
-    CategorySerializers,
-    CommentSerializers,
-    CustomUserSerializer,
-    GenreSerializers,
-    ReviewSerializers,
+    CategorySerializer,
+    CommentSerializer,
+    UserSerializer,
+    GenreSerializer,
+    ReviewSerializer,
     SignUpSerializer,
-    TitleGetSerializers,
-    TitlePostSerializers,
+    TitleGetSerializer,
+    TitlePostSerializer,
     TokenSerializer
 )
 from reviews.models import Category, Comment, Genre, Review, Title
-from users.models import CustomUser
+from users.models import User
 
 
 class CreateDeleteListViewSet(
@@ -59,29 +58,29 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
-            return TitleGetSerializers
-        return TitlePostSerializers
+            return TitleGetSerializer
+        return TitlePostSerializer
 
 
 class CategoryViewSet(CreateDeleteListViewSet):
     """ViewSet для категорий."""
 
     queryset = Category.objects.all()
-    serializer_class = CategorySerializers
+    serializer_class = CategorySerializer
 
 
 class GenreViewSet(CreateDeleteListViewSet):
     """ViewSet для жанров"""
 
     queryset = Genre.objects.all()
-    serializer_class = GenreSerializers
+    serializer_class = GenreSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Класс ViewSet модели Review."""
 
     queryset = Review.objects.all()
-    serializer_class = ReviewSerializers
+    serializer_class = ReviewSerializer
     lookup_url_kwarg = 'review_id'
     permission_classes = (CustomPermission, )
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -100,7 +99,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Класс ViewSet модели Comment."""
 
     queryset = Comment.objects.all()
-    serializer_class = CommentSerializers
+    serializer_class = CommentSerializer
     lookup_url_kwarg = 'comment_id'
     permission_classes = (CustomPermission, )
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -113,11 +112,11 @@ class CommentViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CustomUserViewSet(viewsets.ModelViewSet):
+class UserViewSet(viewsets.ModelViewSet):
     """Вьюсет пользователя."""
 
-    queryset = CustomUser.objects.all()
-    serializer_class = CustomUserSerializer
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
     permission_classes = (AdminPermission,)
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
@@ -133,16 +132,10 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     def me(self, request):
         if request.method == 'PATCH':
             serializer = self.get_serializer(
-                request.user, data=request.data, partial=True)
-            if not serializer.is_valid():
-                return Response(
-                    serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            if serializer.validated_data.get('role'):
-                if request.user.role != 'admin' or (
-                    request.user.is_authenticated
-                ):
-                    serializer.validated_data['role'] = request.user.role
-            serializer.save()
+                request.user, data=request.data, partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save(role=self.request.user.role)
             return Response(serializer.data, status=status.HTTP_200_OK)
         serializer = self.get_serializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -154,13 +147,10 @@ class TokenView(APIView):
     def post(self, request):
         """POST-запрос на получение токена."""
         serializer = TokenSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-        username = request.data.get('username')
-        confirmation_code = request.data.get('confirmation_code')
-        user = get_object_or_404(CustomUser, username=username)
+        serializer.is_valid(raise_exception=True)
+        username = serializer.validated_data['username']
+        confirmation_code = serializer.validated_data['confirmation_code']
+        user = get_object_or_404(User, username=username,)
         if not default_token_generator.check_token(user, confirmation_code):
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -175,22 +165,13 @@ class SignUpView(APIView):
     def post(self, request):
         """POST-запрос на получения email с кодом подтверждения."""
         serializer = SignUpSerializer(data=request.data)
-        username = request.data.get('username')
-        email = request.data.get('email')
-        if not serializer.is_valid():
+        if serializer.is_valid():
             try:
-                CustomUser.objects.get(username=username, email=email)
-            except ObjectDoesNotExist:
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except IntegrityError:
                 return Response(
-                    serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                    {'errors': 'Такой email уже есть'},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
-        user, created = CustomUser.objects.get_or_create(
-            username=username, email=email)
-        confirmation_code = default_token_generator.make_token(user)
-        send_mail(
-            'Код подтверждения',
-            f'Ваш код : {confirmation_code}',
-            'uu@yamnd.com',
-            [email],
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
