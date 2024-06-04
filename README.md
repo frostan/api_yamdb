@@ -74,6 +74,10 @@ pip install --upgrade pip
 ```
 python3 manage.py migrate
 ```
+### Скрипт загрузки данных из csv файлов.
+```
+python3 manage.py loadcsv 
+```
 
 ### Запустите проект:
 

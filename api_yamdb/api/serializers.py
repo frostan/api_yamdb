@@ -3,18 +3,23 @@ import datetime as dt
 from django.core.exceptions import BadRequest
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 
 from reviews.models import Category, Comment, Genre, Review, Title
-from users.models import CustomUser
+from users.models import User
 from api.const import (
     MAX_SCORE,
     MIN_SCORE,
     NAME_MAX_LENGTH,
-    USERNAME_MAX_LEGTH
+    USERNAME_MAX_LENGTH,
+    CODE_MAX_LENGTH,
+    EMAIL_MAX_LENGTH
 )
 
 
-class CategorySerializers(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор категорий."""
 
     class Meta:
@@ -22,7 +27,7 @@ class CategorySerializers(serializers.ModelSerializer):
         exclude = ('id',)
 
 
-class GenreSerializers(serializers.ModelSerializer):
+class GenreSerializer(serializers.ModelSerializer):
     """Сериализатор жанров."""
 
     class Meta:
@@ -30,7 +35,7 @@ class GenreSerializers(serializers.ModelSerializer):
         exclude = ('id',)
 
 
-class TitlePostSerializers(serializers.ModelSerializer):
+class TitlePostSerializer(serializers.ModelSerializer):
     """Cериализатор для POST запроса"""
 
     category = serializers.SlugRelatedField(
@@ -61,11 +66,11 @@ class TitlePostSerializers(serializers.ModelSerializer):
         return value
 
 
-class TitleGetSerializers(serializers.ModelSerializer):
+class TitleGetSerializer(serializers.ModelSerializer):
     """Cериализатор для GET запроса"""
 
-    category = CategorySerializers(read_only=True)
-    genre = GenreSerializers(many=True, read_only=True)
+    category = CategorySerializer(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
     rating = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -81,7 +86,7 @@ class TitleGetSerializers(serializers.ModelSerializer):
         )
 
 
-class ReviewSerializers(serializers.ModelSerializer):
+class ReviewSerializer(serializers.ModelSerializer):
     """Cериализатор модели Review."""
 
     author = serializers.SlugRelatedField(
@@ -116,7 +121,7 @@ class ReviewSerializers(serializers.ModelSerializer):
         return value
 
 
-class CommentSerializers(serializers.ModelSerializer):
+class CommentSerializer(serializers.ModelSerializer):
     """Cериализатор комментариев."""
 
     author = serializers.SlugRelatedField(
@@ -141,11 +146,11 @@ class CommentSerializers(serializers.ModelSerializer):
             raise BadRequest('HTTP_400_BAD_REQUEST')
         return data
 
-class CustomUserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     """Сериализатор пользователя."""
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = (
             'username',
             'email',
@@ -158,9 +163,14 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 class SignUpSerializer(serializers.ModelSerializer):
     """Сериализатор регистрации."""
+    username = serializers.RegexField(
+        regex=r'^[\w.@+-]+\Z',
+        max_length=USERNAME_MAX_LENGTH
+    )
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = ('username', 'email')
 
     def validate_username(self, username):
@@ -171,8 +181,31 @@ class SignUpSerializer(serializers.ModelSerializer):
             )
         return username
 
+    def create(self, validated_data):
+        username = validated_data.get('username')
+        email = validated_data.get('email')
+        try:
+            user = User.objects.get(username=username, email=email)
+        except ObjectDoesNotExist:
+            user = User.objects.create(username=username, email=email)
+        confirmation_code = default_token_generator.make_token(user)
+        send_mail(
+            'Код подтверждения',
+            f'Ваш код: {confirmation_code}',
+            'uu@yamnd.com',
+            [email],
+        )
+
+        return user
+
 
 class TokenSerializer(serializers.Serializer):
     """Сериализатор токена."""
 
-    username = serializers.CharField(max_length=USERNAME_MAX_LEGTH)
+    username = serializers.CharField(
+        required=True,
+        max_length=USERNAME_MAX_LENGTH
+    )
+    confirmation_code = serializers.CharField(
+        required=True, max_length=CODE_MAX_LENGTH
+    )

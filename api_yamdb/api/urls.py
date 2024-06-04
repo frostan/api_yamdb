@@ -7,7 +7,7 @@ from api.views import (
     TitleViewSet,
     ReviewViewSet,
     CommentViewSet,
-    CustomUserViewSet,
+    UserViewSet,
     TokenView,
     SignUpView,
 )
@@ -16,7 +16,7 @@ router_v1 = routers.DefaultRouter()
 router_v1.register('titles', TitleViewSet, basename='titles')
 router_v1.register('categories', CategoryViewSet)
 router_v1.register('genres', GenreViewSet)
-router_v1.register('users', CustomUserViewSet, basename='users')
+router_v1.register('users', UserViewSet, basename='users')
 router_v1.register(
     r'titles/(?P<title_id>\d+)/reviews',
     ReviewViewSet,
