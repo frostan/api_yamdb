@@ -3,8 +3,7 @@ from django.contrib.auth.models import AbstractUser
 
 from api.const import (
     ROLE_MAX_LENGTH,
-    EMAIL_MAX_LENGTH
-    
+    EMAIL_MAX_LENGTH,
 )
 
 

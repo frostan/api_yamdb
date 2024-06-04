@@ -53,7 +53,7 @@ class BaseCommentReviewModel(models.Model):
     def __str__(self):
         """Строковое представление поля для админ-зоны."""
         return self.text[:TEXT_ADMIN_ZONE_MAX_LENGTH]
-    
+
 
 class Category(BaseCategoryGenreModel):
     """Модель категории."""
