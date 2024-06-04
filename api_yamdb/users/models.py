@@ -10,7 +10,6 @@ from api.const import (
 
 class CustomUser(AbstractUser):
     """Кастомная модель юзера."""
-
     USER_ROLES = [
         ('user', 'Пользователь'),
         ('moderator', 'Модератор'),
