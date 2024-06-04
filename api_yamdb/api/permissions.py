@@ -12,13 +12,6 @@ class AdminPermission(BasePermission):
         )
 
 
-class ReadOnlyAnonymousUser(BasePermission):
-    """Для анонимных пользователей только чтение."""
-
-    def has_permission(self, request, view):
-        return request.method in SAFE_METHODS
-
-
 class CustomPermission(BasePermission):
     """Класс кастомных пермишенов."""
 
