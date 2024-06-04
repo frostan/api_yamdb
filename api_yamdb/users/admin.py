@@ -1,18 +1,17 @@
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib import admin
+from users.models import User
 
-from users.models import CustomUser
 
-
-class UserAdmin(admin.ModelAdmin):
+class UserAdmin(BaseUserAdmin):
     list_display = (
         'id',
         'email',
         'bio',
-        'confirmation_code',
         'role',
     )
     list_editable = ('role',)
     empty_value_display = 'пусто'
 
 
-admin.site.register(CustomUser, UserAdmin)
+admin.site.register(User, UserAdmin)
