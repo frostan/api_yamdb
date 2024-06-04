@@ -15,7 +15,6 @@ from api.filter import TitleFilters
 from api.permissions import (
     AdminPermission,
     CustomPermission,
-    ReadOnlyAnonymousUser
 )
 from api.serializers import (
     CategorySerializer,
@@ -43,18 +42,20 @@ class CreateDeleteListViewSet(
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
-    permission_classes = [AdminPermission | ReadOnlyAnonymousUser]
+    permission_classes = (CustomPermission,)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для произведений."""
 
-    queryset = Title.objects.annotate(rating=Avg('reviews__score'))
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')
+    ).order_by('name')
     http_method_names = ('get', 'post', 'patch', 'delete')
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilters
     pagination_class = LimitOffsetPagination
-    permission_classes = [AdminPermission | ReadOnlyAnonymousUser]
+    #permission_classes = (CustomPermission,)
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
