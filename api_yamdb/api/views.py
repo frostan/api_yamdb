@@ -59,6 +59,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
 
 
+
 class CategoryViewSet(CreateDeleteListViewSet):
     """ViewSet для категорий."""
 
@@ -79,7 +80,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     lookup_url_kwarg = 'review_id'
-    permission_classes = (CommentReviewPermission,)
+    permission_classes = (CommentReviewPermission, )
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def perform_create(self, serializer):
