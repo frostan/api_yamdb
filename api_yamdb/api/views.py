@@ -17,6 +17,7 @@ from api.permissions import (
     CommentReviewPermission,
     IsAdminOrReadOnly
 )
+
 from api.serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -57,7 +58,6 @@ class TitleViewSet(viewsets.ModelViewSet):
     filterset_class = TitleFilters
     pagination_class = LimitOffsetPagination
     permission_classes = (IsAdminOrReadOnly,)
-
 
 
 class CategoryViewSet(CreateDeleteListViewSet):

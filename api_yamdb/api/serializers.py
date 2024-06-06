@@ -35,7 +35,6 @@ class GenreSerializer(serializers.ModelSerializer):
         exclude = ('id',)
 
 
-
 class TitleSerializer(serializers.ModelSerializer):
     """Cериализатор для произведений."""
 
@@ -51,6 +50,7 @@ class TitleSerializer(serializers.ModelSerializer):
         allow_empty=False
     )
     rating = serializers.IntegerField(default=0, read_only=True)
+
 
     class Meta:
         model = Title

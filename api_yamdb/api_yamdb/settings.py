@@ -104,7 +104,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 
 AUTH_USER_MODEL = 'users.User'
 
-LANGUAGE_CODE = 'ru'
+LANGUAGE_CODE = 'ru-ru'
+
 
 TIME_ZONE = 'UTC'
 
