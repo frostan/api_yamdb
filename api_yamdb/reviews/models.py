@@ -1,12 +1,13 @@
+from datetime import datetime as dt
+
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.core.validators import MaxValueValidator
-from django.utils import timezone
 
 from api.const import (
     TEXT_MAX_LENGTH,
     NAME_MAX_LENGTH,
 )
+from reviews.validators import validate_year
 
 User = get_user_model()
 
@@ -46,7 +47,7 @@ class Title(models.Model):
     )
     year = models.SmallIntegerField(
         verbose_name='Год выпуска',
-        validators=[MaxValueValidator(timezone.now().year)]
+        validators=[validate_year]
     )
     description = models.TextField(
         blank=True,

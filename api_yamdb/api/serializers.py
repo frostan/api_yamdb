@@ -12,7 +12,6 @@ from users.models import User
 from api.const import (
     MAX_SCORE,
     MIN_SCORE,
-    NAME_MAX_LENGTH,
     USERNAME_MAX_LENGTH,
     CODE_MAX_LENGTH,
     EMAIL_MAX_LENGTH
@@ -35,9 +34,8 @@ class GenreSerializer(serializers.ModelSerializer):
         exclude = ('id',)
 
 
-class TitlePostSerializer(serializers.ModelSerializer):
-    """Cериализатор для POST запроса"""
-
+class TitleSerializer(serializers.ModelSerializer):
+    """Cериализатор для произведений."""
     category = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Category.objects.all()
@@ -49,30 +47,6 @@ class TitlePostSerializer(serializers.ModelSerializer):
         required=True,
         allow_empty=False
     )
-
-    class Meta:
-        model = Title
-        fields = '__all__'
-
-    def validate_year(self, value):
-        year = dt.date.today().year
-        if not year >= value:
-            raise serializers.ValidationError('Проверьте год выпуска!')
-        return value
-
-    def validate_name(self, value):
-        if NAME_MAX_LENGTH < len(value):
-            raise serializers.ValidationError(
-                'Имя произведения большое 256 символов'
-            )
-        return value
-
-
-class TitleGetSerializer(serializers.ModelSerializer):
-    """Cериализатор для GET запроса"""
-
-    category = CategorySerializer(read_only=True)
-    genre = GenreSerializer(many=True, read_only=True)
     rating = serializers.IntegerField(default=0, read_only=True)
 
     class Meta:
@@ -86,6 +60,16 @@ class TitleGetSerializer(serializers.ModelSerializer):
             'genre',
             'category'
         )
+
+    def to_representation(self, value):
+        serializer = super().to_representation(value)
+        serializer['genre'] = GenreSerializer(
+            value.genre.all(), many=True
+        ).data
+        serializer['category'] = CategorySerializer(
+            value.category
+        ).data
+        return serializer
 
 
 class ReviewSerializer(serializers.ModelSerializer):

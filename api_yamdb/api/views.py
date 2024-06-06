@@ -14,7 +14,8 @@ from rest_framework_simplejwt.tokens import AccessToken
 from api.filter import TitleFilters
 from api.permissions import (
     AdminPermission,
-    CustomPermission,
+    CommentReviewPermission,
+    IsAdminOrReadOnly
 )
 from api.serializers import (
     CategorySerializer,
@@ -23,8 +24,7 @@ from api.serializers import (
     GenreSerializer,
     ReviewSerializer,
     SignUpSerializer,
-    TitleGetSerializer,
-    TitlePostSerializer,
+    TitleSerializer,
     TokenSerializer
 )
 from reviews.models import Category, Comment, Genre, Review, Title
@@ -42,7 +42,7 @@ class CreateDeleteListViewSet(
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
-    permission_classes = (CustomPermission,)
+    #permission_classes = (IsAdminOrReadOnly,)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -50,17 +50,13 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')
-    ).order_by('name')
+    ).order_by('-year')
+    serializer_class = TitleSerializer
     http_method_names = ('get', 'post', 'patch', 'delete')
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilters
     pagination_class = LimitOffsetPagination
-    #permission_classes = (CustomPermission,)
-
-    def get_serializer_class(self):
-        if self.request.method == 'GET':
-            return TitleGetSerializer
-        return TitlePostSerializer
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class CategoryViewSet(CreateDeleteListViewSet):
@@ -83,7 +79,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     lookup_url_kwarg = 'review_id'
-    permission_classes = (CustomPermission, )
+    permission_classes = (CommentReviewPermission,)
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def perform_create(self, serializer):
@@ -102,7 +98,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     lookup_url_kwarg = 'comment_id'
-    permission_classes = (CustomPermission, )
+    permission_classes = (CommentReviewPermission, )
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def perform_create(self, serializer):
