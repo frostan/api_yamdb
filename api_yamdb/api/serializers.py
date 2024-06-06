@@ -12,7 +12,6 @@ from users.models import User
 from api.const import (
     MAX_SCORE,
     MIN_SCORE,
-    NAME_MAX_LENGTH,
     USERNAME_MAX_LENGTH,
     CODE_MAX_LENGTH,
     EMAIL_MAX_LENGTH
@@ -50,7 +49,6 @@ class TitleSerializer(serializers.ModelSerializer):
         allow_empty=False
     )
     rating = serializers.IntegerField(default=0, read_only=True)
-
 
     class Meta:
         model = Title
@@ -93,7 +91,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         """Проверка существования записи с title_id и author."""
         if self.partial:
             return data
-        # Проверяем только POST-запрос
         title_id = int(self.context['view'].kwargs['title_id'])
         author = self.context['request'].user
         titles = Review.objects.values('title').filter(
@@ -120,12 +117,11 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
-    
+
     def validate(self, data):
         """Проверка существования записи с title_id и review_id."""
         if self.partial:
             return data
-        # Проверяем только POST-запрос
         title_id = self.context['view'].kwargs['title_id']
         review_id = self.context['view'].kwargs['review_id']
         get_object_or_404(Review, id=review_id)
@@ -134,6 +130,7 @@ class CommentSerializer(serializers.ModelSerializer):
         if not reviews:
             raise BadRequest('HTTP_400_BAD_REQUEST')
         return data
+
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор пользователя."""
