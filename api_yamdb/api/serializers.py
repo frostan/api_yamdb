@@ -183,6 +183,7 @@ class SignUpSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         username = validated_data.get('username')
         email = validated_data.get('email')
+
         try:
             user = User.objects.get(username=username, email=email)
         except ObjectDoesNotExist:

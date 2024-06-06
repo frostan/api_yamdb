@@ -15,8 +15,9 @@ from api.filter import TitleFilters
 from api.permissions import (
     AdminPermission,
     CustomPermission,
-    ReadOnlyAnonymousUser
+    ReadOnlyAnonymousUser,
 )
+
 from api.serializers import (
     CategorySerializer,
     CommentSerializer,

@@ -33,3 +33,4 @@ class CustomPermission(BasePermission):
             request.user.role == 'moderator'
             or request.user.role == 'admin'
         )
+
