@@ -35,8 +35,8 @@ class GenreSerializer(serializers.ModelSerializer):
         exclude = ('id',)
 
 
-class TitlePostSerializer(serializers.ModelSerializer):
-    """Cериализатор для POST запроса"""
+class TitleSerializer(serializers.ModelSerializer):
+    """Cериализатор для произведений."""
 
     category = serializers.SlugRelatedField(
         slug_field='slug',
@@ -45,33 +45,12 @@ class TitlePostSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
-        many=True
+        many=True,
+        required=True,
+        allow_empty=False
     )
+    rating = serializers.IntegerField(default=0, read_only=True)
 
-    class Meta:
-        model = Title
-        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
-
-    def validate_year(self, value):
-        year = dt.date.today().year
-        if not year >= value:
-            raise serializers.ValidationError('Проверьте год выпуска!')
-        return value
-
-    def validate_name(self, value):
-        if NAME_MAX_LENGTH < len(value):
-            raise serializers.ValidationError(
-                'Имя произведения большое 256 символов'
-            )
-        return value
-
-
-class TitleGetSerializer(serializers.ModelSerializer):
-    """Cериализатор для GET запроса"""
-
-    category = CategorySerializer(read_only=True)
-    genre = GenreSerializer(many=True, read_only=True)
-    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Title
@@ -85,6 +64,16 @@ class TitleGetSerializer(serializers.ModelSerializer):
             'category'
         )
 
+    def to_representation(self, value):
+        serializer = super().to_representation(value)
+        serializer['genre'] = GenreSerializer(
+            value.genre.all(), many=True
+        ).data
+        serializer['category'] = CategorySerializer(
+            value.category
+        ).data
+        return serializer
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Cериализатор модели Review."""
@@ -97,26 +86,25 @@ class ReviewSerializer(serializers.ModelSerializer):
         """Класс Meta Cериализатора модели Review."""
 
         model = Review
-        fields = ('id', 'text', 'score', 'author', 'pub_date', 'title')
-        read_only_fields = ('title', 'author')
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
         extra_kwargs = {'author': {'required': True}}
 
-    def create(self, validated_data):
-        """Переопределение метода Create."""
-        title_id = self.context['view'].kwargs['title_id']
-        author = validated_data.get('author')
-        titles = list(
-            Review.objects.values('title').filter(
-                author=author))
-        for title in titles:
-            if title.get('title') == int(title_id):
-                raise BadRequest('HTTP_400_BAD_REQUEST')
-        review = Review.objects.create(**validated_data)
-        return review
+    def validate(self, data):
+        """Проверка существования записи с title_id и author."""
+        if self.partial:
+            return data
+        # Проверяем только POST-запрос
+        title_id = int(self.context['view'].kwargs['title_id'])
+        author = self.context['request'].user
+        titles = Review.objects.values('title').filter(
+            title=title_id, author=author).exists()
+        if titles:
+            raise BadRequest('HTTP_400_BAD_REQUEST')
+        return data
 
     def validate_score(self, value):
-        """Проверка поля ."""
-        if value not in range(MIN_SCORE, MAX_SCORE + 1):
+        """Проверка поля score."""
+        if value < MIN_SCORE or value > MAX_SCORE:
             raise serializers.ValidationError(
                 f'Оценка выходит за диапазон, {MIN_SCORE}..{MAX_SCORE}')
         return value
@@ -132,18 +120,20 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
-        read_only_fields = ('title', 'author')
-
-    def create(self, validated_data):
-        """Переопределение метода Create."""
+    
+    def validate(self, data):
+        """Проверка существования записи с title_id и review_id."""
+        if self.partial:
+            return data
+        # Проверяем только POST-запрос
         title_id = self.context['view'].kwargs['title_id']
         review_id = self.context['view'].kwargs['review_id']
-        review = get_object_or_404(Review, id=review_id)
-        if review.title_id != int(title_id):
+        get_object_or_404(Review, id=review_id)
+        reviews = Review.objects.filter(
+            id=review_id, title=title_id).exists()
+        if not reviews:
             raise BadRequest('HTTP_400_BAD_REQUEST')
-        comment = Comment.objects.create(**validated_data)
-        return comment
-
+        return data
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор пользователя."""
@@ -183,7 +173,6 @@ class SignUpSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         username = validated_data.get('username')
         email = validated_data.get('email')
-
         try:
             user = User.objects.get(username=username, email=email)
         except ObjectDoesNotExist:

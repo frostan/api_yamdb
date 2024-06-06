@@ -1,11 +1,17 @@
+from datetime import datetime as dt
+
 from django.db import models
 from django.contrib.auth import get_user_model
-
+from django.core.validators import MaxValueValidator, MinValueValidator
 from api.const import (
     TEXT_MAX_LENGTH,
     NAME_MAX_LENGTH,
-    SLUG_MAX_LENGTH
+    SLUG_MAX_LENGTH,
+    MIN_SCORE,
+    MAX_SCORE,
+    TEXT_ADMIN_ZONE_MAX_LENGTH
 )
+from reviews.validators import validate_year
 
 User = get_user_model()
 
@@ -14,26 +20,52 @@ class BaseCategoryGenreModel(models.Model):
     """Базовая модель Категорий и Жанров."""
 
     name = models.CharField(max_length=NAME_MAX_LENGTH)
-    slug = models.SlugField(
-        max_length=SLUG_MAX_LENGTH,
-        unique=True,
-    )
+    slug = models.SlugField(unique=True)
 
     class Meta:
         abstract = True
+        ordering = ('name',)
 
     def __str__(self) -> str:
         return f'{self.name} - {self.slug}'
 
 
+class BaseCommentReviewModel(models.Model):
+    """Базовая модель Комментарий и Оценки."""
+
+    text = models.CharField(
+        max_length=TEXT_MAX_LENGTH,
+        verbose_name='Текст'
+    )
+    pub_date = models.DateTimeField(
+        'Дата публикации',
+        auto_now_add=True
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор_'
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ('-pub_date',)
+
+    def __str__(self):
+        """Строковое представление поля для админ-зоны."""
+        return self.text[:TEXT_ADMIN_ZONE_MAX_LENGTH]
+
+
 class Category(BaseCategoryGenreModel):
     """Модель категории."""
-    pass
+    class Meta(BaseCategoryGenreModel.Meta):
+        verbose_name = 'Категории'
 
 
 class Genre(BaseCategoryGenreModel):
     """Модель жанров."""
-    pass
+    class Meta(BaseCategoryGenreModel.Meta):
+        verbose_name = 'Жанры'
 
 
 class Title(models.Model):
@@ -43,7 +75,10 @@ class Title(models.Model):
         max_length=NAME_MAX_LENGTH,
         verbose_name='Название'
     )
-    year = models.IntegerField(verbose_name='Год выпуска')
+    year = models.SmallIntegerField(
+        verbose_name='Год выпуска',
+        validators=[validate_year]
+    )
     description = models.TextField(
         blank=True,
         null=True,
@@ -76,7 +111,7 @@ class TitleGenre(models.Model):
         blank=True,
         null=True,
         on_delete=models.CASCADE,
-        related_name='titles',
+        related_name='titles_genres',
         verbose_name='Произведение'
     )
     genre = models.ForeignKey(
@@ -84,7 +119,7 @@ class TitleGenre(models.Model):
         blank=True,
         null=True,
         on_delete=models.SET_NULL,
-        related_name='genres',
+        related_name='titles_genres',
         verbose_name='Жанр'
     )
 
@@ -92,29 +127,21 @@ class TitleGenre(models.Model):
         return f'{self.title} - {self.genre}'
 
 
-class Review(models.Model):
+class Review(BaseCommentReviewModel):
     """Модель Review."""
 
-    text = models.CharField(
-        max_length=TEXT_MAX_LENGTH,
-        verbose_name='Текст'
+    score = models.PositiveSmallIntegerField(
+        default=MIN_SCORE,
+        validators=[
+            MaxValueValidator(MAX_SCORE),
+            MinValueValidator(MIN_SCORE)
+        ],
+        verbose_name='Оценка'
     )
-    score = models.IntegerField(default=1, verbose_name='Оценка')
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='reviews',
         verbose_name='ID_произведения'
-    )
-    pub_date = models.DateTimeField(
-        'Дата публикации отзыва',
-        auto_now_add=True
-    )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='reviews',
-        verbose_name='Автор_отзыва'
     )
 
     class Meta:
@@ -128,35 +155,17 @@ class Review(models.Model):
                 name='unique_author_title'
             )
         ]
-
-    def __str__(self):
-        """Строковое представление поля для админ-зоны."""
-        return self.text
+        default_related_name = 'reviews'
 
 
-class Comment(models.Model):
+class Comment(BaseCommentReviewModel):
     """Модель комментариев."""
 
-    text = models.CharField(
-        max_length=TEXT_MAX_LENGTH,
-        verbose_name='Текст комментария'
-    )
-    pub_date = models.DateTimeField(
-        'Дата публикации комментария',
-        auto_now_add=True
-    )
     review = models.ForeignKey(
         Review,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='comments',
         verbose_name='Отзыв'
-    )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='comment',
-        verbose_name='Автор_комментария'
     )
 
     class Meta:
@@ -164,7 +173,4 @@ class Comment(models.Model):
 
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
-
-    def __str__(self):
-        """Строковое представление поля для админ-зоны."""
-        return self.text
+        default_related_name = 'comments'

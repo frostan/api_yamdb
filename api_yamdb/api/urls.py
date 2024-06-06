@@ -32,7 +32,9 @@ auth_path = [
     path('signup/', SignUpView.as_view(), name='signup'),
     path('token/', TokenView.as_view(), name='token')
 ]
+
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
     path('v1/auth/', include(auth_path)),
+
 ]
