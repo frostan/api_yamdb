@@ -14,6 +14,9 @@ class UserAdmin(BaseUserAdmin):
     )
     list_editable = ('role',)
     empty_value_display = '-пусто-'
-    add_fieldsets = BaseUserAdmin.fieldsets + (
-        (None, {'fields': ('email',)}),
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Персональная информация',
+         {'fields': ('first_name', 'last_name', 'bio', 'email')}
+         )
     )

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 
 from api.const import (
     ROLE_MAX_LENGTH,
@@ -37,6 +38,10 @@ class User(AbstractUser):
         ordering = ('id',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+
+    def validate_username(username):
+        if username == 'me':
+            raise ValidationError('me нельзя использовать')
 
     def __str__(self):
         return self.username
