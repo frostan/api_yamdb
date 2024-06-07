@@ -56,12 +56,14 @@ class BaseCommentReviewModel(models.Model):
 
 class Category(BaseCategoryGenreModel):
     """Модель категории."""
+
     class Meta(BaseCategoryGenreModel.Meta):
         verbose_name = 'Категории'
 
 
 class Genre(BaseCategoryGenreModel):
     """Модель жанров."""
+
     class Meta(BaseCategoryGenreModel.Meta):
         verbose_name = 'Жанры'
 

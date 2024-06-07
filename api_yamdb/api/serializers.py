@@ -1,19 +1,19 @@
+from rest_framework import serializers
 from django.core.exceptions import BadRequest
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 
-from reviews.models import Category, Comment, Genre, Review, Title
-from users.models import User
+from api_yamdb.settings import EMAIL
 from api.const import (
     MAX_SCORE,
     MIN_SCORE,
     USERNAME_MAX_LENGTH,
     CODE_MAX_LENGTH,
-    EMAIL_MAX_LENGTH
 )
+from reviews.models import Category, Comment, Genre, Review, Title
+from users.models import User
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -151,7 +151,6 @@ class SignUpSerializer(serializers.ModelSerializer):
         regex=r'^[\w.@+-]+\Z',
         max_length=USERNAME_MAX_LENGTH
     )
-    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     class Meta:
         model = User
@@ -176,7 +175,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         send_mail(
             'Код подтверждения',
             f'Ваш код: {confirmation_code}',
-            'uu@yamnd.com',
+            EMAIL,
             [email],
         )
 

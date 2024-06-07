@@ -19,7 +19,6 @@ class User(AbstractUser):
         (MODERATOR, 'Модератор'),
         (ADMIN, 'Админ')
     ]
-
     bio = models.TextField('Биография', blank=True)
     email = models.EmailField(
         'Электронная почта',
@@ -35,16 +34,18 @@ class User(AbstractUser):
     )
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('username',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
-    def validate_username(username):
-        if username == 'me':
-            raise ValidationError('me нельзя использовать')
-
     def __str__(self):
         return self.username
+
+    def clean(self):
+        if self.username == 'me':
+            raise ValidationError(
+                {'username': 'me нельзя использовать в качестве username'}
+            )
 
     @property
     def is_admin(self):

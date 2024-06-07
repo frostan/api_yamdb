@@ -14,8 +14,8 @@ from api.views import (
 
 router_v1 = routers.DefaultRouter()
 router_v1.register('titles', TitleViewSet, basename='titles')
-router_v1.register('categories', CategoryViewSet)
-router_v1.register('genres', GenreViewSet)
+router_v1.register('categories', CategoryViewSet, basename='categories')
+router_v1.register('genres', GenreViewSet, basename='genres')
 router_v1.register('users', UserViewSet, basename='users')
 router_v1.register(
     r'titles/(?P<title_id>\d+)/reviews',
@@ -29,12 +29,12 @@ router_v1.register(
 )
 
 auth_path = [
-    path('signup/', SignUpView.as_view(), name='signup'),
-    path('token/', TokenView.as_view(), name='token')
+    path('auth/signup/', SignUpView.as_view(), name='signup'),
+    path('auth/token/', TokenView.as_view(), name='token')
 ]
 
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
-    path('v1/auth/', include(auth_path)),
+    path('v1/', include(auth_path)),
 
 ]
