@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from django.core.exceptions import BadRequest
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 
 from api_yamdb.settings import EMAIL
 from api.const import (

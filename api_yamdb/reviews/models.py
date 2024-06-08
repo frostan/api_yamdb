@@ -1,12 +1,10 @@
-from datetime import datetime as dt
-
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
+
 from api.const import (
     TEXT_MAX_LENGTH,
     NAME_MAX_LENGTH,
-    SLUG_MAX_LENGTH,
     MIN_SCORE,
     MAX_SCORE,
     TEXT_ADMIN_ZONE_MAX_LENGTH
@@ -56,14 +54,42 @@ class BaseCommentReviewModel(models.Model):
         return self.text[:TEXT_ADMIN_ZONE_MAX_LENGTH]
 
 
+class BaseCommentReviewModel(models.Model):
+    """Базовая модель Комментарий и Оценки."""
+
+    text = models.CharField(
+        max_length=TEXT_MAX_LENGTH,
+        verbose_name='Текст'
+    )
+    pub_date = models.DateTimeField(
+        'Дата публикации',
+        auto_now_add=True
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор_'
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ('-pub_date',)
+
+    def __str__(self):
+        """Строковое представление поля для админ-зоны."""
+        return self.text[:TEXT_ADMIN_ZONE_MAX_LENGTH]
+
+
 class Category(BaseCategoryGenreModel):
     """Модель категории."""
+
     class Meta(BaseCategoryGenreModel.Meta):
         verbose_name = 'Категории'
 
 
 class Genre(BaseCategoryGenreModel):
     """Модель жанров."""
+
     class Meta(BaseCategoryGenreModel.Meta):
         verbose_name = 'Жанры'
 
