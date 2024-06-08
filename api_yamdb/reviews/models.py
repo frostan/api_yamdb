@@ -1,3 +1,5 @@
+from datetime import datetime as dt
+
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -9,6 +11,7 @@ from api.const import (
     MAX_SCORE,
     TEXT_ADMIN_ZONE_MAX_LENGTH
 )
+from reviews.validators import validate_year
 
 User = get_user_model()
 
@@ -17,13 +20,11 @@ class BaseCategoryGenreModel(models.Model):
     """Базовая модель Категорий и Жанров."""
 
     name = models.CharField(max_length=NAME_MAX_LENGTH)
-    slug = models.SlugField(
-        max_length=SLUG_MAX_LENGTH,
-        unique=True,
-    )
+    slug = models.SlugField(unique=True)
 
     class Meta:
         abstract = True
+        ordering = ('name',)
 
     def __str__(self) -> str:
         return f'{self.name} - {self.slug}'
@@ -57,12 +58,14 @@ class BaseCommentReviewModel(models.Model):
 
 class Category(BaseCategoryGenreModel):
     """Модель категории."""
-    pass
+    class Meta(BaseCategoryGenreModel.Meta):
+        verbose_name = 'Категории'
 
 
 class Genre(BaseCategoryGenreModel):
     """Модель жанров."""
-    pass
+    class Meta(BaseCategoryGenreModel.Meta):
+        verbose_name = 'Жанры'
 
 
 class Title(models.Model):
@@ -72,7 +75,10 @@ class Title(models.Model):
         max_length=NAME_MAX_LENGTH,
         verbose_name='Название'
     )
-    year = models.IntegerField(verbose_name='Год выпуска')
+    year = models.SmallIntegerField(
+        verbose_name='Год выпуска',
+        validators=[validate_year]
+    )
     description = models.TextField(
         blank=True,
         null=True,
@@ -105,7 +111,7 @@ class TitleGenre(models.Model):
         blank=True,
         null=True,
         on_delete=models.CASCADE,
-        related_name='titles',
+        related_name='titles_genres',
         verbose_name='Произведение'
     )
     genre = models.ForeignKey(
@@ -113,7 +119,7 @@ class TitleGenre(models.Model):
         blank=True,
         null=True,
         on_delete=models.SET_NULL,
-        related_name='genres',
+        related_name='titles_genres',
         verbose_name='Жанр'
     )
 
