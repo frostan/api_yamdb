@@ -6,8 +6,10 @@ from django.core.mail import send_mail
 
 from api_yamdb.settings import EMAIL
 from api.const import (
+    MAX_SCORE,
+    MIN_SCORE,
     USERNAME_MAX_LENGTH,
-    CODE_MAX_LENGTH,
+    CODE_MAX_LENGTH
 )
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
@@ -74,6 +76,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
+    score = serializers.IntegerField()
 
     class Meta:
         """Класс Meta Cериализатора модели Review."""
@@ -82,7 +85,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ('id', 'text', 'author', 'score', 'pub_date')
 
     def validate(self, data):
-        """Проверка существования Review c title_id и author."""
+        """Проверка существования Отзыва c title_id и author."""
         if self.partial:
             return data
         title_id = int(self.context['view'].kwargs['title_id'])
@@ -91,9 +94,16 @@ class ReviewSerializer(serializers.ModelSerializer):
             title=title_id, author=author).exists()
         if titles:
             raise serializers.ValidationError(
-                'Нельзя делать повторную оценку одного и того же произведения'
+                'Нельзя делать повторный Отзыв одного и того же произведения'
             )
         return data
+
+    def validate_score(self, value):
+        """Проверка поля score."""
+        if value < MIN_SCORE or value > MAX_SCORE:
+            raise serializers.ValidationError(
+                f'Оценка выходит за диапазон, {MIN_SCORE}..{MAX_SCORE}')
+        return value
 
 
 class CommentSerializer(serializers.ModelSerializer):
