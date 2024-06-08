@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.core.exceptions import BadRequest
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.tokens import default_token_generator
@@ -7,8 +6,6 @@ from django.core.mail import send_mail
 
 from api_yamdb.settings import EMAIL
 from api.const import (
-    MAX_SCORE,
-    MIN_SCORE,
     USERNAME_MAX_LENGTH,
     CODE_MAX_LENGTH,
 )
@@ -83,10 +80,9 @@ class ReviewSerializer(serializers.ModelSerializer):
 
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
-        extra_kwargs = {'author': {'required': True}}
 
     def validate(self, data):
-        """Проверка существования записи с title_id и author."""
+        """Проверка существования Review c title_id и author."""
         if self.partial:
             return data
         title_id = int(self.context['view'].kwargs['title_id'])
@@ -94,15 +90,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         titles = Review.objects.values('title').filter(
             title=title_id, author=author).exists()
         if titles:
-            raise BadRequest('HTTP_400_BAD_REQUEST')
-        return data
-
-    def validate_score(self, value):
-        """Проверка поля score."""
-        if value < MIN_SCORE or value > MAX_SCORE:
             raise serializers.ValidationError(
-                f'Оценка выходит за диапазон, {MIN_SCORE}..{MAX_SCORE}')
-        return value
+                'Нельзя делать повторную оценку одного и того же произведения'
+            )
+        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -120,13 +111,8 @@ class CommentSerializer(serializers.ModelSerializer):
         """Проверка существования записи с title_id и review_id."""
         if self.partial:
             return data
-        title_id = self.context['view'].kwargs['title_id']
         review_id = self.context['view'].kwargs['review_id']
         get_object_or_404(Review, id=review_id)
-        reviews = Review.objects.filter(
-            id=review_id, title=title_id).exists()
-        if not reviews:
-            raise BadRequest('HTTP_400_BAD_REQUEST')
         return data
 
 
