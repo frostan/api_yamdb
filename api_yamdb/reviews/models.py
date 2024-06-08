@@ -54,32 +54,6 @@ class BaseCommentReviewModel(models.Model):
         return self.text[:TEXT_ADMIN_ZONE_MAX_LENGTH]
 
 
-class BaseCommentReviewModel(models.Model):
-    """Базовая модель Комментарий и Оценки."""
-
-    text = models.CharField(
-        max_length=TEXT_MAX_LENGTH,
-        verbose_name='Текст'
-    )
-    pub_date = models.DateTimeField(
-        'Дата публикации',
-        auto_now_add=True
-    )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='Автор_'
-    )
-
-    class Meta:
-        abstract = True
-        ordering = ('-pub_date',)
-
-    def __str__(self):
-        """Строковое представление поля для админ-зоны."""
-        return self.text[:TEXT_ADMIN_ZONE_MAX_LENGTH]
-
-
 class Category(BaseCategoryGenreModel):
     """Модель категории."""
 
