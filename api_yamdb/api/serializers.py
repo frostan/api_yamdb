@@ -1,22 +1,17 @@
-import datetime as dt
-
+from rest_framework import serializers
 from django.core.exceptions import BadRequest
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
 
-from reviews.models import Category, Comment, Genre, Review, Title
-from users.models import User
+from api_yamdb.settings import EMAIL
 from api.const import (
     MAX_SCORE,
     MIN_SCORE,
-    NAME_MAX_LENGTH,
     USERNAME_MAX_LENGTH,
     CODE_MAX_LENGTH,
-    EMAIL_MAX_LENGTH
 )
+from reviews.models import Category, Comment, Genre, Review, Title
+from users.models import User
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -33,7 +28,6 @@ class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
         exclude = ('id',)
-
 
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -93,7 +87,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         """Проверка существования записи с title_id и author."""
         if self.partial:
             return data
-        # Проверяем только POST-запрос
         title_id = int(self.context['view'].kwargs['title_id'])
         author = self.context['request'].user
         titles = Review.objects.values('title').filter(
@@ -120,12 +113,11 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
-    
+
     def validate(self, data):
         """Проверка существования записи с title_id и review_id."""
         if self.partial:
             return data
-        # Проверяем только POST-запрос
         title_id = self.context['view'].kwargs['title_id']
         review_id = self.context['view'].kwargs['review_id']
         get_object_or_404(Review, id=review_id)
@@ -134,6 +126,7 @@ class CommentSerializer(serializers.ModelSerializer):
         if not reviews:
             raise BadRequest('HTTP_400_BAD_REQUEST')
         return data
+
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор пользователя."""
@@ -156,7 +149,6 @@ class SignUpSerializer(serializers.ModelSerializer):
         regex=r'^[\w.@+-]+\Z',
         max_length=USERNAME_MAX_LENGTH
     )
-    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     class Meta:
         model = User
@@ -181,7 +173,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         send_mail(
             'Код подтверждения',
             f'Ваш код: {confirmation_code}',
-            'uu@yamnd.com',
+            EMAIL,
             [email],
         )
 

@@ -33,3 +33,4 @@ class IsAdminOrReadOnly(BasePermission):
         if request.method in SAFE_METHODS:
             return True
         return request.user.is_authenticated and request.user.is_admin
+
