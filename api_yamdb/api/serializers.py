@@ -11,6 +11,7 @@ from api.const import (
     MIN_SCORE,
     USERNAME_MAX_LENGTH,
     CODE_MAX_LENGTH,
+    EMAIL_MAX_LENGTH
 )
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
@@ -151,6 +152,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         regex=r'^[\w.@+-]+\Z',
         max_length=USERNAME_MAX_LENGTH
     )
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
 
     class Meta:
         model = User
