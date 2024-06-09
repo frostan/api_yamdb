@@ -1,17 +1,18 @@
-from rest_framework import serializers
-from django.core.exceptions import BadRequest
-from django.shortcuts import get_object_or_404
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db import IntegrityError
+from django.shortcuts import get_object_or_404
+from rest_framework import serializers
 
-from api_yamdb.settings import EMAIL
 from api.const import (
+    CODE_MAX_LENGTH,
+    EMAIL_MAX_LENGTH,
     MAX_SCORE,
     MIN_SCORE,
     USERNAME_MAX_LENGTH,
-    CODE_MAX_LENGTH,
+    CODE_MAX_LENGTH
 )
+from api_yamdb.settings import EMAIL
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 
@@ -77,16 +78,16 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
+    score = serializers.IntegerField()
 
     class Meta:
         """Класс Meta Cериализатора модели Review."""
 
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
-        extra_kwargs = {'author': {'required': True}}
 
     def validate(self, data):
-        """Проверка существования записи с title_id и author."""
+        """Проверка существования Отзыва c title_id и author."""
         if self.partial:
             return data
         title_id = int(self.context['view'].kwargs['title_id'])
@@ -94,7 +95,9 @@ class ReviewSerializer(serializers.ModelSerializer):
         titles = Review.objects.values('title').filter(
             title=title_id, author=author).exists()
         if titles:
-            raise BadRequest('HTTP_400_BAD_REQUEST')
+            raise serializers.ValidationError(
+                'Нельзя делать повторный Отзыв одного и того же произведения'
+            )
         return data
 
     def validate_score(self, value):
@@ -120,13 +123,8 @@ class CommentSerializer(serializers.ModelSerializer):
         """Проверка существования записи с title_id и review_id."""
         if self.partial:
             return data
-        title_id = self.context['view'].kwargs['title_id']
         review_id = self.context['view'].kwargs['review_id']
         get_object_or_404(Review, id=review_id)
-        reviews = Review.objects.filter(
-            id=review_id, title=title_id).exists()
-        if not reviews:
-            raise BadRequest('HTTP_400_BAD_REQUEST')
         return data
 
 
@@ -145,16 +143,14 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
 
-class SignUpSerializer(serializers.ModelSerializer):
+class SignUpSerializer(serializers.Serializer):
     """Сериализатор регистрации."""
     username = serializers.RegexField(
         regex=r'^[\w.@+-]+\Z',
-        max_length=USERNAME_MAX_LENGTH
+        max_length=USERNAME_MAX_LENGTH,
+        required=True
     )
-
-    class Meta:
-        model = User
-        fields = ('username', 'email')
+    email = serializers.EmailField(required=True, max_length=EMAIL_MAX_LENGTH)
 
     def validate_username(self, username):
         """Валидируем username."""
@@ -164,21 +160,27 @@ class SignUpSerializer(serializers.ModelSerializer):
             )
         return username
 
-    def create(self, validated_data):
-        username = validated_data.get('username')
-        email = validated_data.get('email')
+    def validate(self, data):
         try:
-            user = User.objects.get(username=username, email=email)
-        except ObjectDoesNotExist:
-            user = User.objects.create(username=username, email=email)
+            User.objects.get_or_create(
+                username=data.get('username'),
+                email=data.get('email')
+            )
+        except IntegrityError:
+            raise serializers.ValidationError(
+                'Такой username или email уже существует'
+            )
+        return data
+
+    def create(self, validated_data):
+        user, _ = User.objects.get_or_create(**validated_data)
         confirmation_code = default_token_generator.make_token(user)
         send_mail(
             'Код подтверждения',
             f'Ваш код: {confirmation_code}',
             EMAIL,
-            [email],
+            [validated_data.get('email')],
         )
-
         return user
 
 

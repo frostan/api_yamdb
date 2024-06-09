@@ -1,11 +1,8 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.db import models
 
-from api.const import (
-    ROLE_MAX_LENGTH,
-    EMAIL_MAX_LENGTH,
-)
+from api.const import EMAIL_MAX_LENGTH, ROLE_MAX_LENGTH
 
 
 class User(AbstractUser):
@@ -19,6 +16,7 @@ class User(AbstractUser):
         (MODERATOR, 'Модератор'),
         (ADMIN, 'Админ')
     ]
+
     bio = models.TextField('Биография', blank=True)
     email = models.EmailField(
         'Электронная почта',
@@ -54,4 +52,4 @@ class User(AbstractUser):
 
     @property
     def is_moderator(self):
-        return self.role == self.MODERATOR or self.is_staff
+        return self.role == self.MODERATOR

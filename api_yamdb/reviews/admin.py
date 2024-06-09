@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from reviews.models import Title, Genre, Comment, Review, Category, TitleGenre
+from reviews.models import Category, Comment, Genre, Review, Title, TitleGenre
 
 
 class GenreInline(admin.TabularInline):
@@ -9,7 +9,7 @@ class GenreInline(admin.TabularInline):
 
 @admin.register(Title)
 class TitleAdmin(admin.ModelAdmin):
-    inlines = GenreInline
+    inlines = (GenreInline,)
     list_display = (
         'id',
         'name',
@@ -17,8 +17,14 @@ class TitleAdmin(admin.ModelAdmin):
         'description',
         'category'
     )
-    list_editable = ('category')
+    list_editable = ('category',)
     search_fields = ('year', 'name')
+
+    def get_genre_list(self, obj):
+        genres = []
+        for genre in obj.genre.all():
+            genres.append(genre.name)
+        return ','.join(genres)
 
 
 @admin.register(Genre)

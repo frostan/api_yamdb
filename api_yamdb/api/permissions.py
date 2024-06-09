@@ -1,4 +1,4 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
 class AdminPermission(BasePermission):
@@ -15,7 +15,6 @@ class CommentReviewPermission(BasePermission):
         return (
             request.method in SAFE_METHODS
             or request.user.is_authenticated
-            or request.user.is_staff
         )
 
     def has_object_permission(self, request, view, obj):
@@ -28,7 +27,6 @@ class CommentReviewPermission(BasePermission):
 
 
 class IsAdminOrReadOnly(BasePermission):
-    """Админ или только чтение."""
 
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
