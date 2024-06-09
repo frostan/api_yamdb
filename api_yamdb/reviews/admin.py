@@ -20,6 +20,12 @@ class TitleAdmin(admin.ModelAdmin):
     list_editable = ('category',)
     search_fields = ('year', 'name')
 
+    def get_genre_list(self, obj):
+        genres = []
+        for genre in obj.genre.all():
+            genres.append(genre.name)
+        return ','.join(genres)
+
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
