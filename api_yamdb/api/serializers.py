@@ -10,7 +10,8 @@ from api.const import (
     EMAIL_MAX_LENGTH,
     MAX_SCORE,
     MIN_SCORE,
-    USERNAME_MAX_LENGTH
+    USERNAME_MAX_LENGTH,
+    CODE_MAX_LENGTH
 )
 from api_yamdb.settings import EMAIL
 from reviews.models import Category, Comment, Genre, Review, Title
@@ -78,16 +79,16 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
+    score = serializers.IntegerField()
 
     class Meta:
         """Класс Meta Cериализатора модели Review."""
 
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
-        extra_kwargs = {'author': {'required': True}}
 
     def validate(self, data):
-        """Проверка существования записи с title_id и author."""
+        """Проверка существования Отзыва c title_id и author."""
         if self.partial:
             return data
         title_id = int(self.context['view'].kwargs['title_id'])
@@ -95,7 +96,9 @@ class ReviewSerializer(serializers.ModelSerializer):
         titles = Review.objects.values('title').filter(
             title=title_id, author=author).exists()
         if titles:
-            raise BadRequest('HTTP_400_BAD_REQUEST')
+            raise serializers.ValidationError(
+                'Нельзя делать повторный Отзыв одного и того же произведения'
+            )
         return data
 
     def validate_score(self, value):
@@ -121,13 +124,8 @@ class CommentSerializer(serializers.ModelSerializer):
         """Проверка существования записи с title_id и review_id."""
         if self.partial:
             return data
-        title_id = self.context['view'].kwargs['title_id']
         review_id = self.context['view'].kwargs['review_id']
         get_object_or_404(Review, id=review_id)
-        reviews = Review.objects.filter(
-            id=review_id, title=title_id).exists()
-        if not reviews:
-            raise BadRequest('HTTP_400_BAD_REQUEST')
         return data
 
 

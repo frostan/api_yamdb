@@ -26,7 +26,7 @@ from api.serializers import (
     TokenSerializer,
     UserSerializer
 )
-from reviews.models import Category, Comment, Genre, Review, Title
+from reviews.models import Category, Genre, Review, Title
 from users.models import User
 
 
@@ -75,37 +75,45 @@ class GenreViewSet(CreateDeleteListViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     """Класс ViewSet модели Review."""
 
-    queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     lookup_url_kwarg = 'review_id'
     permission_classes = (CommentReviewPermission, )
     http_method_names = ['get', 'post', 'patch', 'delete']
 
+    def get_queryset(self):
+        """Выбираем Отзывы для конкретного Произведения"""
+        title = self.kwargs.get('title_id')
+        new_queryset = Review.objects.filter(title=title)
+        return new_queryset
+
     def perform_create(self, serializer):
         """Переопределение метода create."""
         title_id = self.kwargs.get('title_id')
         title = get_object_or_404(Title, id=title_id)
-        if serializer.is_valid():
-            serializer.save(title=title, author=self.request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save(author=self.request.user, title=title)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Класс ViewSet модели Comment."""
 
-    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     lookup_url_kwarg = 'comment_id'
     permission_classes = (CommentReviewPermission, )
     http_method_names = ['get', 'post', 'patch', 'delete']
 
+    def get_queryset(self):
+        """Выбираем Комментарии для конкретного Отзыва"""
+        review_id = self.kwargs.get('review_id')
+        review = get_object_or_404(Review, id=review_id)
+        return review.comments.all()
+
     def perform_create(self, serializer):
         """Переопределение метода create."""
-        if serializer.is_valid():
-            serializer.save(author=self.request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        review_id = self.kwargs.get('review_id')
+        review = get_object_or_404(Review, id=review_id)
+        serializer.save(author=self.request.user, review=review)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class UserViewSet(viewsets.ModelViewSet):

@@ -15,7 +15,6 @@ class CommentReviewPermission(BasePermission):
         return (
             request.method in SAFE_METHODS
             or request.user.is_authenticated
-            or request.user.is_staff
         )
 
     def has_object_permission(self, request, view, obj):
