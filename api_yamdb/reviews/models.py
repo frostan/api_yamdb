@@ -1,13 +1,13 @@
-from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 
 from api.const import (
-    TEXT_MAX_LENGTH,
-    NAME_MAX_LENGTH,
-    MIN_SCORE,
     MAX_SCORE,
-    TEXT_ADMIN_ZONE_MAX_LENGTH
+    MIN_SCORE,
+    NAME_MAX_LENGTH,
+    TEXT_ADMIN_ZONE_MAX_LENGTH,
+    TEXT_MAX_LENGTH
 )
 from reviews.validators import validate_year
 
