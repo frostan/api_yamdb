@@ -1,5 +1,5 @@
 from django.contrib.auth.tokens import default_token_generator
-from django.db import IntegrityError
+from django.core.mail import send_mail
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
@@ -12,22 +12,13 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
 from api.filter import TitleFilters
-from api.permissions import (
-    AdminPermission,
-    CommentReviewPermission,
-    IsAdminOrReadOnly
-)
-
-from api.serializers import (
-    CategorySerializer,
-    CommentSerializer,
-    UserSerializer,
-    GenreSerializer,
-    ReviewSerializer,
-    SignUpSerializer,
-    TitleSerializer,
-    TokenSerializer
-)
+from api.permissions import (AdminPermission, CommentReviewPermission,
+                             IsAdminOrReadOnly)
+from api.serializers import (CategorySerializer, CommentSerializer,
+                             GenreSerializer, ReviewSerializer,
+                             SignUpSerializer, TitleSerializer,
+                             TokenSerializer, UserSerializer)
+from api_yamdb.settings import EMAIL
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 
@@ -148,7 +139,7 @@ class TokenView(APIView):
         serializer.is_valid(raise_exception=True)
         username = serializer.validated_data['username']
         confirmation_code = serializer.validated_data['confirmation_code']
-        user = get_object_or_404(User, username=username,)
+        user = get_object_or_404(User, username=username)
         if not default_token_generator.check_token(user, confirmation_code):
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -161,15 +152,8 @@ class SignUpView(APIView):
     """Вью регистрации."""
 
     def post(self, request):
-        """POST-запрос на получения email с кодом подтверждения."""
+        """POST-запрос на получение email с кодом подтверждения."""
         serializer = SignUpSerializer(data=request.data)
-        if serializer.is_valid():
-            try:
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            except IntegrityError:
-                return Response(
-                    {'errors': 'Такой email уже есть'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)

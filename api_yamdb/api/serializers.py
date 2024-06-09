@@ -1,18 +1,18 @@
-from rest_framework import serializers
-from django.core.exceptions import BadRequest
-from django.shortcuts import get_object_or_404
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import BadRequest
 from django.core.mail import send_mail
+from django.db import IntegrityError
+from django.shortcuts import get_object_or_404
+from rest_framework import serializers
 
-from api_yamdb.settings import EMAIL
 from api.const import (
+    CODE_MAX_LENGTH,
+    EMAIL_MAX_LENGTH,
     MAX_SCORE,
     MIN_SCORE,
-    USERNAME_MAX_LENGTH,
-    CODE_MAX_LENGTH,
-    EMAIL_MAX_LENGTH
+    USERNAME_MAX_LENGTH
 )
+from api_yamdb.settings import EMAIL
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 
@@ -146,17 +146,14 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
 
-class SignUpSerializer(serializers.ModelSerializer):
+class SignUpSerializer(serializers.Serializer):
     """Сериализатор регистрации."""
     username = serializers.RegexField(
         regex=r'^[\w.@+-]+\Z',
-        max_length=USERNAME_MAX_LENGTH
+        max_length=USERNAME_MAX_LENGTH,
+        required=True
     )
-    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
-
-    class Meta:
-        model = User
-        fields = ('username', 'email')
+    email = serializers.EmailField(required=True, max_length=EMAIL_MAX_LENGTH)
 
     def validate_username(self, username):
         """Валидируем username."""
@@ -167,21 +164,27 @@ class SignUpSerializer(serializers.ModelSerializer):
         return username
 
     def create(self, validated_data):
-        username = validated_data.get('username')
-        email = validated_data.get('email')
-        try:
-            user = User.objects.get(username=username, email=email)
-        except ObjectDoesNotExist:
-            user = User.objects.create(username=username, email=email)
+        user, _ = User.objects.get_or_create(**validated_data)
         confirmation_code = default_token_generator.make_token(user)
         send_mail(
             'Код подтверждения',
             f'Ваш код: {confirmation_code}',
             EMAIL,
-            [email],
+            [user.email],
         )
-
         return user
+
+    def validate(self, data):
+        try:
+            User.objects.get_or_create(
+                username=data.get('username'),
+                email=data.get('email')
+            )
+        except IntegrityError:
+            raise serializers.ValidationError(
+                {'errors': 'Такой username и email уже есть'}
+            )
+        return data
 
 
 class TokenSerializer(serializers.Serializer):
