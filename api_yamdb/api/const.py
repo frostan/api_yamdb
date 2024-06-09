@@ -8,8 +8,7 @@ ROLE_MAX_LENGTH = 20
 EMAIL_MAX_LENGTH = 254
 CODE_MAX_LENGTH = 250
 
-# Константы для сериализаторов:
-# ReviewSerializer, SignUpSerializer,TokenSerializer
+# Константы для: ReviewSerializer, SignUpSerializer,TokenSerializer
 USERNAME_MAX_LENGTH = 150
 MAX_SCORE = 10
 MIN_SCORE = 1

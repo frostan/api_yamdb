@@ -7,9 +7,9 @@ from rest_framework import serializers
 
 from api.const import (
     CODE_MAX_LENGTH,
+    EMAIL_MAX_LENGTH,
     MAX_SCORE,
     MIN_SCORE,
-    EMAIL_MAX_LENGTH,
     USERNAME_MAX_LENGTH
 )
 from api_yamdb.settings import EMAIL
@@ -153,6 +153,7 @@ class SignUpSerializer(serializers.Serializer):
         max_length=USERNAME_MAX_LENGTH,
         required=True
     )
+    email = serializers.EmailField(required=True, max_length=EMAIL_MAX_LENGTH)
 
     def validate_username(self, username):
         """Валидируем username."""
@@ -169,7 +170,9 @@ class SignUpSerializer(serializers.Serializer):
                 email=data.get('email')
             )
         except IntegrityError:
-            raise serializers.ValidationError('уже существует')
+            raise serializers.ValidationError(
+                'Такой username или email уже существует'
+            )
         return data
 
     def create(self, validated_data):
@@ -179,7 +182,7 @@ class SignUpSerializer(serializers.Serializer):
             'Код подтверждения',
             f'Ваш код: {confirmation_code}',
             EMAIL,
-            [validated_data['email']],
+            [validated_data.get('email')],
         )
         return user
 

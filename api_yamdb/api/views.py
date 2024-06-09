@@ -1,5 +1,4 @@
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
@@ -27,7 +26,6 @@ from api.serializers import (
     TokenSerializer,
     UserSerializer
 )
-from api_yamdb.settings import EMAIL
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 
