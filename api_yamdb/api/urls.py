@@ -3,13 +3,13 @@ from rest_framework import routers
 
 from api.views import (
     CategoryViewSet,
-    GenreViewSet,
-    TitleViewSet,
-    ReviewViewSet,
     CommentViewSet,
-    UserViewSet,
-    TokenView,
+    GenreViewSet,
+    ReviewViewSet,
     SignUpView,
+    TitleViewSet,
+    TokenView,
+    UserViewSet
 )
 
 router_v1 = routers.DefaultRouter()

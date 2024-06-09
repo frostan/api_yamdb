@@ -1,13 +1,13 @@
-from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 
 from api.const import (
-    TEXT_MAX_LENGTH,
-    NAME_MAX_LENGTH,
-    MIN_SCORE,
     MAX_SCORE,
-    TEXT_ADMIN_ZONE_MAX_LENGTH
+    MIN_SCORE,
+    NAME_MAX_LENGTH,
+    TEXT_ADMIN_ZONE_MAX_LENGTH,
+    TEXT_MAX_LENGTH
 )
 from reviews.validators import validate_year
 
@@ -17,8 +17,14 @@ User = get_user_model()
 class BaseCategoryGenreModel(models.Model):
     """Базовая модель Категорий и Жанров."""
 
-    name = models.CharField(max_length=NAME_MAX_LENGTH)
-    slug = models.SlugField(unique=True)
+    name = models.CharField(
+        max_length=NAME_MAX_LENGTH,
+        verbose_name='Наименование'
+    )
+    slug = models.SlugField(
+        unique=True,
+        verbose_name='Слаг'
+    )
 
     class Meta:
         abstract = True
@@ -58,14 +64,16 @@ class Category(BaseCategoryGenreModel):
     """Модель категории."""
 
     class Meta(BaseCategoryGenreModel.Meta):
-        verbose_name = 'Категории'
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
 
 
 class Genre(BaseCategoryGenreModel):
     """Модель жанров."""
 
     class Meta(BaseCategoryGenreModel.Meta):
-        verbose_name = 'Жанры'
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
 
 
 class Title(models.Model):
