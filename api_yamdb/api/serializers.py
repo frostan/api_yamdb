@@ -7,9 +7,9 @@ from rest_framework import serializers
 
 from api.const import (
     CODE_MAX_LENGTH,
-    EMAIL_MAX_LENGTH,
     MAX_SCORE,
     MIN_SCORE,
+    EMAIL_MAX_LENGTH,
     USERNAME_MAX_LENGTH
 )
 from api_yamdb.settings import EMAIL
@@ -153,7 +153,6 @@ class SignUpSerializer(serializers.Serializer):
         max_length=USERNAME_MAX_LENGTH,
         required=True
     )
-    email = serializers.EmailField(required=True, max_length=EMAIL_MAX_LENGTH)
 
     def validate_username(self, username):
         """Валидируем username."""
@@ -163,17 +162,6 @@ class SignUpSerializer(serializers.Serializer):
             )
         return username
 
-    def create(self, validated_data):
-        user, _ = User.objects.get_or_create(**validated_data)
-        confirmation_code = default_token_generator.make_token(user)
-        send_mail(
-            'Код подтверждения',
-            f'Ваш код: {confirmation_code}',
-            EMAIL,
-            [user.email],
-        )
-        return user
-
     def validate(self, data):
         try:
             User.objects.get_or_create(
@@ -181,10 +169,19 @@ class SignUpSerializer(serializers.Serializer):
                 email=data.get('email')
             )
         except IntegrityError:
-            raise serializers.ValidationError(
-                {'errors': 'Такой username и email уже есть'}
-            )
+            raise serializers.ValidationError('уже существует')
         return data
+
+    def create(self, validated_data):
+        user, _ = User.objects.get_or_create(**validated_data)
+        confirmation_code = default_token_generator.make_token(user)
+        send_mail(
+            'Код подтверждения',
+            f'Ваш код: {confirmation_code}',
+            EMAIL,
+            [validated_data['email']],
+        )
+        return user
 
 
 class TokenSerializer(serializers.Serializer):

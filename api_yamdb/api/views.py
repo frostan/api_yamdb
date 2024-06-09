@@ -12,12 +12,21 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
 from api.filter import TitleFilters
-from api.permissions import (AdminPermission, CommentReviewPermission,
-                             IsAdminOrReadOnly)
-from api.serializers import (CategorySerializer, CommentSerializer,
-                             GenreSerializer, ReviewSerializer,
-                             SignUpSerializer, TitleSerializer,
-                             TokenSerializer, UserSerializer)
+from api.permissions import (
+    AdminPermission,
+    CommentReviewPermission,
+    IsAdminOrReadOnly
+)
+from api.serializers import (
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    SignUpSerializer,
+    TitleSerializer,
+    TokenSerializer,
+    UserSerializer
+)
 from api_yamdb.settings import EMAIL
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
