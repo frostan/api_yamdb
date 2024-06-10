@@ -102,10 +102,10 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate_score(self, value):
         """Проверка поля score."""
-        if value < MIN_SCORE or value > MAX_SCORE:
-            raise serializers.ValidationError(
-                f'Оценка выходит за диапазон, {MIN_SCORE}..{MAX_SCORE}')
-        return value
+        if MIN_SCORE <= value <= MAX_SCORE:
+            return value
+        raise serializers.ValidationError(
+            f'Оценка выходит за диапазон, {MIN_SCORE}..{MAX_SCORE}')
 
 
 class CommentSerializer(serializers.ModelSerializer):
