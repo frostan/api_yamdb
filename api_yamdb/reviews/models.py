@@ -106,6 +106,9 @@ class Title(models.Model):
 
     class Meta:
         default_related_name = 'titles'
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
+        ordering = ('-year',)
 
     def __str__(self) -> str:
         return f'{self.category} - {self.genre} - {self.name} - {self.year}'
