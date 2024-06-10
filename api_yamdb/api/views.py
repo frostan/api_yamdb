@@ -114,7 +114,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Review, id=review_id, title=title_id)
 
     def get_queryset(self):
-        """Выбираем Комментарии для конкретного Отзыва"""
+        """Выбираем Комментарии для конкретного Отзыва."""
         review = self.get_review()
         return review.comments.all()
 
